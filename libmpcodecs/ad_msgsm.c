@@ -1,8 +1,8 @@
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "config.h"
 #include "ad_internal.h"
 
 static ad_info_t info = 

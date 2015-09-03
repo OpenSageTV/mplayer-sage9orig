@@ -2,9 +2,10 @@
  *
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: rtp.c 19325 2006-08-04 19:36:41Z ben $
+ * $Id: rtp.c,v 1.1 2007-04-10 20:11:30 Narflex Exp $
  */
 
+#include "config.h"
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -12,7 +13,6 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <ctype.h>
-#include "config.h"
 #ifndef HAVE_WINSOCK2
 #include <netinet/in.h>
 #include <sys/socket.h>

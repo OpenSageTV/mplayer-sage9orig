@@ -41,6 +41,7 @@ SRCS_COMMON-$(MPLAYER_NETWORK)   += stream_netstream.c     \
                                     realrtsp/rmff.c        \
                                     realrtsp/sdpplin.c     \
                                     realrtsp/xbuffer.c     \
+                                    stream_sagetv.c        \
 
 SRCS_COMMON-$(PVR)               += stream_pvr.c
 SRCS_COMMON-$(RADIO)             += stream_radio.c

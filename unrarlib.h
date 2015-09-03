@@ -7,7 +7,7 @@
  **
  ** Modified for use with MPlayer, detailed changelog at
  ** http://svn.mplayerhq.hu/mplayer/trunk/
- ** $Id: unrarlib.h 18786 2006-06-22 13:34:00Z diego $
+ ** $Id: unrarlib.h,v 1.3 2007-04-10 19:33:06 Narflex Exp $
  **
  **  The contents of this file are subject to the UniquE RAR File Library
  **  License (the "unrarlib-license.txt"). You may not use this file except

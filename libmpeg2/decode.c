@@ -22,7 +22,7 @@
  *
  * Modified for use with MPlayer, see libmpeg-0.4.1.diff for the exact changes.
  * detailed changelog at http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: decode.c 21542 2006-12-09 10:34:27Z henry $
+ * $Id: decode.c,v 1.3 2007-04-10 19:33:27 Narflex Exp $
  */
 
 #include "config.h"

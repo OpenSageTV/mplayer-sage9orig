@@ -17,6 +17,7 @@
 //  TSGS#15(02)0088
 //  http://www.3gpp.org/ftp/tsg_sa/TSG_SA/TSGS_15/Docs/pdf/SP-020088.pdf
 //  http://www.3gpp2.org/Public_html/specs/C.S0050-0_v1.0_121503.pdf
+#include "config.h"
 
 #include <stdio.h>
 #include <stdlib.h>

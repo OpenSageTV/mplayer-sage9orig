@@ -1,3 +1,4 @@
+#include "config.h"
 /*
     MS ADPCM Decoder for MPlayer
       by Mike Melanson

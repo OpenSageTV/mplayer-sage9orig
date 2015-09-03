@@ -1,3 +1,4 @@
+#include "config.h"
 /* vf_bmovl.c v0.9.1 - BitMap OVerLay videofilter for MPlayer
  *
  * (C) 2002 Per Wigren <wigren@home.se>
@@ -63,7 +64,6 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <fcntl.h>
-#include "config.h"
 #include "mp_image.h"
 #include "vf.h"
 #include "img_format.h"

@@ -20,7 +20,7 @@
 ** forbidden.
 **
 ** Initially modified for use with MPlayer by Rich Felker on 2005/03/29
-** $Id: output.c 18786 2006-06-22 13:34:00Z diego $
+** $Id: output.c,v 1.4 2007-04-10 19:33:20 Narflex Exp $
 ** detailed changelog at http://svn.mplayerhq.hu/mplayer/trunk/
 **/
 

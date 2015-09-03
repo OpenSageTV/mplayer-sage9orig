@@ -1,7 +1,7 @@
 /*
  * Modified for use with MPlayer, detailed changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: allocator.c 22322 2007-02-23 08:07:07Z voroshil $
+ * $Id: allocator.c,v 1.3 2007-04-10 19:33:30 Narflex Exp $
  */
 
 #include "config.h"

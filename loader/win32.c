@@ -14,7 +14,7 @@ for DLL to know too much about its environment.
 /*
  * Modified for use with MPlayer, detailed changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: win32.c 22893 2007-04-01 14:42:13Z diego $
+ * $Id: win32.c,v 1.4 2007-04-10 19:33:29 Narflex Exp $
  */
 
 #include "config.h"

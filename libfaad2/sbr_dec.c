@@ -23,7 +23,7 @@
 ** For more info contact Ahead Software through Mpeg4AAClicense@nero.com.
 **
 ** Initially modified for use with MPlayer on 2005/12/05
-** $Id: sbr_dec.c,v 1.39 2004/09/04 14:56:28 menno Exp $
+** $Id: sbr_dec.c,v 1.4 2007-04-10 19:33:20 Narflex Exp $
 ** detailed changelog at http://svn.mplayerhq.hu/mplayer/trunk/
 ** local_changes.diff contains the exact changes to this file.
 **/

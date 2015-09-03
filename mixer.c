@@ -1,3 +1,4 @@
+#include "config.h"
 #include <string.h>
 #ifndef __MINGW32__
 #include <sys/ioctl.h>
@@ -6,7 +7,6 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include "config.h"
 #include "libao2/audio_out.h"
 #include "libaf/af.h"
 #include "mixer.h"

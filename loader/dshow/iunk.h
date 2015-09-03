@@ -1,7 +1,7 @@
 /*
  * Modified for use with MPlayer, detailed changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: iunk.h 18786 2006-06-22 13:34:00Z diego $
+ * $Id: iunk.h,v 1.3 2007-04-10 19:33:30 Narflex Exp $
  */
 
 #ifndef DS_IUNK_H

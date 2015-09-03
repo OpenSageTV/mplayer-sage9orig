@@ -96,6 +96,9 @@ static void get_str16(ByteIOContext *pb, char *buf, int buf_size)
     len = get_le16(pb);
     q = buf;
     while (len > 0) {
+		if (len == 1)
+			c = get_byte(pb);
+		else
         c = get_le16(pb);
         if ((q - buf) < buf_size - 1)
             *q++ = c;
@@ -199,6 +202,7 @@ static int asf_read_header(AVFormatContext *s, AVFormatParameters *ap)
             unsigned int tag1;
             int64_t pos1, pos2;
             int test_for_ext_stream_audio;
+            int theFlags;
 
             pos1 = url_ftell(pb);
 
@@ -234,7 +238,13 @@ static int asf_read_header(AVFormatContext *s, AVFormatParameters *ap)
             total_size = get_le64(pb);
             type_specific_size = get_le32(pb);
             get_le32(pb);
-            st->id = get_le16(pb) & 0x7f; /* stream id */
+			theFlags = get_le16(pb);
+            st->id = theFlags & 0x7f; /* stream id */
+			if ((theFlags & 0x80) == 0x80)
+			{
+				if (ap->dump_metadata)
+					av_log(NULL, AV_LOG_INFO, "META:ENCRYPTED[MS-DRM]\n");
+			}
             // mapping of asf ID to AV stream ID;
             asf->asfid2avid[st->id] = s->nb_streams - 1;
 
@@ -346,7 +356,11 @@ static int asf_read_header(AVFormatContext *s, AVFormatParameters *ap)
             len4 = get_le16(pb);
             len5 = get_le16(pb);
             get_str16_nolen(pb, len1, s->title    , sizeof(s->title));
+			if (len1 && ap->dump_metadata)
+				av_log(NULL, AV_LOG_INFO, "META:Title=%s\r\n", s->title);
             get_str16_nolen(pb, len2, s->author   , sizeof(s->author));
+			if (len2 && ap->dump_metadata)
+				av_log(NULL, AV_LOG_INFO, "META:Artist=%s\r\n", s->author);
             get_str16_nolen(pb, len3, s->copyright, sizeof(s->copyright));
             get_str16_nolen(pb, len4, s->comment  , sizeof(s->comment));
             url_fskip(pb, len5);
@@ -374,6 +388,7 @@ static int asf_read_header(AVFormatContext *s, AVFormatParameters *ap)
                         int name_len,value_type,value_len;
                         uint64_t value_num = 0;
                         char name[1024];
+						char* value;
 
                         name_len = get_le16(pb);
                         get_str16_nolen(pb, name_len, name, sizeof(name));
@@ -381,15 +396,66 @@ static int asf_read_header(AVFormatContext *s, AVFormatParameters *ap)
                         value_len = get_le16(pb);
                         if ((value_type == 0) || (value_type == 1)) // unicode or byte
                         {
-                                if     (!strcmp(name,"WM/AlbumTitle")) get_str16_nolen(pb, value_len, s->album, sizeof(s->album));
-                                else if(!strcmp(name,"WM/Genre"     )) get_str16_nolen(pb, value_len, s->genre, sizeof(s->genre));
-                                else url_fskip(pb, value_len);
+                                  value = (char *)av_mallocz(value_len);
+								if (strcmp(name, "WM/Picture") == 0)
+								{
+									if (ap->dump_metadata)
+									{
+										int picPos;
+										// skip the first four bytes (not sure what it is)
+										value_len -= 4;
+										get_le32(pb);
+										// Skip the null terminated wide string for mime type
+										while (value_len > 0)
+										{
+											value_len -= 2;
+											if (get_le16(pb) == 0)
+												break;
+										}
+										// Skip the next byte for pic type (this might be swapped with the next string
+										// so switch these two if this is wrong)
+										get_byte(pb);
+										value_len--;
+										// Skip null terminated wide string for description
+										while (value_len > 0)
+										{
+											value_len -= 2;
+											if (get_le16(pb) == 0)
+												break;
+										}
+										picPos = (int) url_ftell(pb);
+										av_log(NULL, AV_LOG_INFO, "META:%s=%d,%d\r\n", name, picPos, value_len);
+									}
+									url_fseek(pb, value_len, SEEK_CUR);
+								}
+								else if (value_type == 0)
+								{
+                                  get_str16_nolen(pb, value_len, value, value_len);
+                                  if (strcmp(name,"WM/AlbumTitle")==0) { pstrcpy(s->album, sizeof(s->album), value); }
+									if (ap->dump_metadata)
+										av_log(NULL, AV_LOG_INFO, "META:%s=%s\r\n", name, value);
+								}
+								else
+								{
+									url_fseek(pb, value_len, SEEK_CUR);
+								}
+                                  av_free(value);
                         }
                         if ((value_type >= 2) && (value_type <= 5)) // boolean or DWORD or QWORD or WORD
                         {
                                 value_num= get_value(pb, value_type);
-                                if (!strcmp(name,"WM/Track"      )) s->track = value_num + 1;
-                                if (!strcmp(name,"WM/TrackNumber")) s->track = value_num;
+                                if (!strcmp(name,"WM/Track"))
+								{
+									s->track = (int)value_num + 1;
+									if (ap->dump_metadata)
+										av_log(NULL, AV_LOG_INFO, "META:%s=%d\r\n", name, (int)value_num + 1);
+								}
+								else
+								{
+                                  if (!strcmp(name,"WM/TrackNumber")) s->track = (int)value_num;
+									if (ap->dump_metadata)
+										av_log(NULL, AV_LOG_INFO, "META:%s=%d\r\n", name, (int)value_num);
+								}
                         }
                 }
         } else if (!memcmp(&g, &metadata_header, sizeof(GUID))) {
@@ -482,6 +548,12 @@ static int asf_read_header(AVFormatContext *s, AVFormatParameters *ap)
                 *q = '\0';
             }
 #endif
+        } else if (!memcmp(&g, &content_encryption_object_guid, sizeof(GUID))) {
+
+			if (ap->dump_metadata)
+				av_log(NULL, AV_LOG_INFO, "META:ENCRYPTED[MS-DRM]\n");
+            url_fseek(pb, gsize - 24, SEEK_CUR);
+
         } else if (url_feof(pb)) {
             goto fail;
         } else {

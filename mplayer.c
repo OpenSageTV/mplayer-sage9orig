@@ -1,10 +1,9 @@
 
 /// \file
 /// \ingroup Properties Command2Property OSDMsgStack
-
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "config.h"
 
 #ifdef WIN32
 #define _UWIN 1  /*disable Non-underscored versions of non-ANSI functions as otherwise int eof would conflict with eof()*/
@@ -89,6 +88,9 @@ int enable_mouse_movements=0;
 #ifdef WIN32
 char * proc_priority=NULL;
 #endif
+int active_file=0;
+long circular_file_size=0;
+int load_muted=0;
 
 #define ROUND(x) ((int)((x)<0 ? (x)-0.5 : (x)+0.5))
 
@@ -213,6 +215,7 @@ double vout_time_usage=0;
 static double audio_time_usage=0;
 static int total_time_usage_start=0;
 static int total_frame_cnt=0;
+
 static int drop_frame_cnt=0; // total number of dropped frames
 int benchmark=0;
 
@@ -244,6 +247,7 @@ static off_t seek_to_byte=0;
 static off_t step_sec=0;
 static int loop_times=-1;
 static int loop_seek=0;
+
 
 static m_time_size_t end_at = { .type = END_AT_NONE, .pos = 0 };
 
@@ -279,6 +283,7 @@ int file_filter=1;
 
 // cache2:
        int stream_cache_size=-1;
+	   int stream_buffer_size=2048;
 #ifdef USE_STREAM_CACHE
 extern int cache_fill_status;
 
@@ -804,9 +809,9 @@ if ((conffile = get_path("")) == NULL) {
   mp_msg(MSGT_CPLAYER,MSGL_WARN,MSGTR_NoHomeDir);
 } else {
 #ifdef __MINGW32__
-  mkdir(conffile);
+//  mkdir(conffile);
 #else
-  mkdir(conffile, 0777);
+//  mkdir(conffile, 0777);
 #endif
   free(conffile);
   if ((conffile = get_path("config")) == NULL) {
@@ -1119,24 +1124,40 @@ static void print_status(float a_pos, float a_v, float corr)
   
   // Audio time
   if (mpctx->sh_audio) {
-    saddf(line, &pos, width, "A:%6.1f ", a_pos);
+    saddf(line, &pos, width, "A:%7.1f ", a_pos);
     if (!sh_video) {
-      float len = demuxer_get_time_length(mpctx->demuxer);
+      // convert time to HH:MM:SS.F format
+      long tenths = 10 * a_pos;
+      int f1 = tenths % 10;
+      int ss = (tenths /  10) % 60;
+      int mm = (tenths / 600) % 60;
+      int hh = (tenths / 36000) % 100;
       saddf(line, &pos, width, "(");
-      sadd_hhmmssf(line, &pos, width, a_pos);
-      saddf(line, &pos, width, ") of %.1f (", len);
-      sadd_hhmmssf(line, &pos, width, len);
+      if (hh > 0)
+        saddf(line, &pos, width, "%2d:", hh);
+      if (hh > 0 || mm > 0)
+        saddf(line, &pos, width, "%02d:", mm);
+      saddf(line, &pos, width, "%02d.", ss);
+      saddf(line, &pos, width, "%1d", f1);
       saddf(line, &pos, width, ") ");
     }
   }
 
   // Video time
   if (sh_video)
-    saddf(line, &pos, width, "V:%6.1f ", sh_video->pts);
+    saddf(line, &pos, width, "V:%7.1f ", sh_video->pts);
 
   // A-V sync
   if (mpctx->sh_audio && sh_video)
     saddf(line, &pos, width, "A-V:%7.3f ct:%7.3f ", a_v, corr);
+
+  // NARFLEX: Print out the demuxer's file position so we can see how our stream buffering is doing
+  // since this much more accurate than looking at the cache percentage
+#ifdef WIN32
+  saddf(line, &pos, width, "P:%I64d ", (off_t)mpctx->demuxer->filepos);
+#else
+  saddf(line, &pos, width, "P:%lld ", (off_t)mpctx->demuxer->filepos);
+#endif
 
   // Video stats
   if (sh_video)
@@ -1176,14 +1197,9 @@ static void print_status(float a_pos, float a_v, float corr)
     saddf(line, &pos, width, "%4.2fx ", playback_speed);
 
   // end
-  if (erase_to_end_of_line) {
-    line[pos] = 0;
-    mp_msg(MSGT_AVSYNC, MSGL_STATUS, "%s%s\r", line, erase_to_end_of_line);
-  } else {
     memset(&line[pos], ' ', width - pos);
     line[width] = 0;
     mp_msg(MSGT_AVSYNC, MSGL_STATUS, "%s\r", line);
-  }
   free(line);
 }
 
@@ -1459,7 +1475,7 @@ static void update_osd_msg(void) {
         osd_text[0] = 0;
         printf("%s\n",term_osd_esc);
     }
-}
+    }
 
 ///@}
 // OSDMsgStack
@@ -2079,7 +2095,8 @@ void pause_loop(void)
 	    msg[mlen-1] = '\0';
 	    set_osd_msg(OSD_MSG_PAUSE, 1, 0, "%s", msg+1);
 	    update_osd_msg();
-	} else
+	} //else
+	// NARFLEX: SageTV we always want this Paused message since we use it to detect play state!, don't hide it with an else
 	    mp_msg(MSGT_CPLAYER,MSGL_STATUS,MSGTR_Paused);
         mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_PAUSED\n");
     }
@@ -2093,7 +2110,12 @@ void pause_loop(void)
     if (mpctx->audio_out && mpctx->sh_audio)
 	mpctx->audio_out->pause();	// pause audio, keep data if possible
 
-    while ( (cmd = mp_input_get_cmd(20, 1, 1)) == NULL) {
+	  // Also process volume/mute commands here (we don't want to have it step frames in that case)
+	  while (1)
+	  {
+		  cmd = mp_input_get_cmd(20,1,1);
+		  if (cmd == NULL)
+		  {
 	if (mpctx->sh_video && mpctx->video_out && vo_config_count)
 	    mpctx->video_out->check_events();
 #ifdef HAVE_NEW_GUI
@@ -2110,7 +2132,120 @@ void pause_loop(void)
 #endif
 	usec_sleep(20000);
     }
-    if (cmd && cmd->id == MP_CMD_PAUSE) {
+ 		 else
+ 		 {
+ 			 int usedCmd = 1;
+ printf("cmdid=%d\n", cmd->id);
+ 			 switch (cmd->id)
+ 			 {
+ 				case MP_CMD_VOLUME :
+ 				{
+ 					float v = cmd->args[0].v.f;
+ 						// start change for absolute volume value
+ 	    			int abs = (cmd->nargs > 1) ? cmd->args[1].v.i : 0;
+ 					float currVolume;
+ 					if( abs )
+ 					{
+ 						if (mpctx->mixer.muted)
+ 						{
+ 							mpctx->mixer.last_l = mpctx->mixer.last_r = v;
+ 						}
+ 						else
+ 							mixer_setvolume(&mpctx->mixer, (float)v, (float)v );
+ 						currVolume = v;
+ 					}
+ 					else 
+ 					{
+ 					  if(v > 0)
+ 					  {
+ 						  if (mpctx->mixer.muted)
+ 						  {
+ 							  mpctx->mixer.last_l += mpctx->mixer.volstep;
+ 							  mpctx->mixer.last_r += mpctx->mixer.volstep;
+ 							  if (mpctx->mixer.last_l > 100)
+ 								  mpctx->mixer.last_l = 100;
+ 							  if (mpctx->mixer.last_r > 100)
+ 								  mpctx->mixer.last_r = 100;
+ 							  currVolume = mpctx->mixer.last_l;
+ 						  }
+ 						  else
+ 						  {
+ 							mixer_incvolume(&mpctx->mixer);
+ 							mixer_getbothvolume(&mpctx->mixer, &currVolume);
+ 						  }
+ 					  }
+ 					  else if (v < 0)
+ 					  {
+ 						  if (mpctx->mixer.muted)
+ 						  {
+ 							  mpctx->mixer.last_l -= mpctx->mixer.volstep;
+ 							  mpctx->mixer.last_r -= mpctx->mixer.volstep;
+ 							  if (mpctx->mixer.last_l < 0)
+ 								  mpctx->mixer.last_l = 0;
+ 							  if (mpctx->mixer.last_r < 0)
+ 								  mpctx->mixer.last_r = 0;
+ 							  currVolume = mpctx->mixer.last_l;
+ 						  }
+ 						  else
+ 						  {
+ 							mixer_decvolume(&mpctx->mixer);
+ 							mixer_getbothvolume(&mpctx->mixer, &currVolume);
+ 						  }
+ 					  }
+ 					  else
+ 					  {
+ 						  if (mpctx->mixer.muted)
+ 							  currVolume = mpctx->mixer.last_l;
+ 						  else
+ 							  mixer_getbothvolume(&mpctx->mixer, &currVolume);
+ 					  }
+ 					}
+ 					mp_msg(MSGT_GLOBAL,MSGL_INFO,"VOLUME=%f\n", currVolume);
+ 					break;
+ 				}
+ 				case MP_CMD_MUTE:
+ 				{
+ 				  mixer_mute(&mpctx->mixer);
+ 				  mp_msg(MSGT_GLOBAL,MSGL_INFO,"MUTED=%d\n", mpctx->mixer.muted);
+ 				  break;
+ 				}
+ 				case MP_CMD_INACTIVE_FILE : {
+ 					mpctx->stream->activeFileFlag = 0;
+ 					if (mpctx->stream->cache_data)
+ 					{
+ 						cache_vars_t* sc = mpctx->stream->cache_data;
+ 						sc->streamOriginal->activeFileFlag = 0;
+ 						sc->stream->activeFileFlag = 0;
+ 					}				
+ 				} break;
+ 				case MP_CMD_ACTIVE_FILE : {
+ 					mpctx->stream->activeFileFlag = 1;
+					if (mpctx->stream->cache_data)
+ 					{
+						cache_vars_t* sc = mpctx->stream->cache_data;
+						sc->streamOriginal->activeFileFlag = 1;
+						sc->stream->activeFileFlag = 1;
+					}				
+				} break;
+				case MP_CMD_VO_RECTANGLES : {
+					int rectData[8] = { cmd->args[0].v.i, cmd->args[1].v.i, cmd->args[2].v.i, cmd->args[3].v.i, 
+						cmd->args[4].v.i, cmd->args[5].v.i, cmd->args[6].v.i, cmd->args[7].v.i };
+					mpctx->video_out->control(VOCTRL_RECTANGLES, rectData);
+					break;
+				}
+				default:
+					usedCmd = 0;
+					break;
+			 }
+			 if (usedCmd)
+			 {
+				  cmd = mp_input_get_cmd(0,1,0);
+				  mp_cmd_free(cmd);
+			 }
+			 else
+				 break;
+		 }
+	  }    if (cmd && cmd->id == MP_CMD_PAUSE) {
 	cmd = mp_input_get_cmd(0,1,0);
 	mp_cmd_free(cmd);
     }
@@ -2182,8 +2317,9 @@ static void edl_seek_reset(MPContext *mpctx)
 	    mpctx->edl_muted = !mpctx->edl_muted;
 	next_edl_record = next_edl_record->next;
     }
-    if ((mpctx->user_muted | mpctx->edl_muted) != mpctx->mixer.muted)
-	mixer_mute(&mpctx->mixer);
+//Narflex: This was incorrectly modifying the mute state on a seek
+//    if ((mpctx->user_muted | mpctx->edl_muted) != mpctx->mixer.muted)
+//	mixer_mute(&mpctx->mixer);
 }
 
 
@@ -2245,6 +2381,7 @@ static int seek(MPContext *mpctx, double amount, int style)
 	// (which is used by at least vobsub and edl code below) may
 	// be completely wrong (probably 0).
 	mpctx->sh_video->pts = mpctx->d_video->pts;
+printf("videopts after seek=%f\n", mpctx->sh_video->pts);
 	update_subtitles(mpctx->sh_video, mpctx->d_sub, 1);
     }
       
@@ -2266,8 +2403,11 @@ static int seek(MPContext *mpctx, double amount, int style)
     max_pts_correction = 0.1;
     audio_time_usage = 0; video_time_usage = 0; vout_time_usage = 0;
     drop_frame_cnt = 0;
+	// reset the i_pts because its no longer valid after a seek
+	if(mpctx->sh_video) mpctx->sh_video->i_pts = 0;
 
     current_module = NULL;
+printf("DEMUXSEEKSTART\n");fflush(stdout);
     return 0;
 }
 
@@ -2469,7 +2609,7 @@ if(!codecs_file || !parse_codec_cfg(codecs_file)){
       fstype_help();
       mp_msg(MSGT_FIXME, MSGL_FIXME, "\n");
       opt_exit = 1;
-    }
+}
 #endif
     if((demuxer_name && strcmp(demuxer_name,"help")==0) ||
        (audio_demuxer_name && strcmp(audio_demuxer_name,"help")==0) ||
@@ -2829,6 +2969,8 @@ if (edl_output_filename) {
       mpctx->global_sub_size += vobsub_get_indexes_count(vo_vobsub);
     }
 
+fprintf(stderr, "DEBUG - active_file=%d circFileSize=%ld\n", active_file, circular_file_size);
+fflush(stderr);
 //============ Open & Sync STREAM --- fork cache2 ====================
 
   mpctx->stream=NULL;
@@ -2851,6 +2993,9 @@ if (edl_output_filename) {
     goto goto_next_file;
   }
   inited_flags|=INITED_STREAM;
+
+  mpctx->stream->activeFileFlag = active_file;
+  mpctx->stream->circularFileSize = circular_file_size;
 
 #ifdef HAVE_NEW_GUI
   if ( use_gui ) guiGetEvent( guiSetStream,(char *)mpctx->stream );
@@ -3236,7 +3381,7 @@ current_module="main";
         char* msg = property_expand_string(mpctx, playing_msg);
         mp_msg(MSGT_CPLAYER,MSGL_INFO,"%s",msg);
         free(msg);
-    }
+}
         
 
 // Disable the term OSD in verbose mode
@@ -3337,6 +3482,12 @@ if (seek_to_sec) {
 if (end_at.type == END_AT_SIZE) {
     mp_msg(MSGT_CPLAYER, MSGL_WARN, MSGTR_MPEndposNoSizeBased);
     end_at.type = END_AT_NONE;
+}
+
+if (load_muted)
+{
+	// Start the mixer in the muted state
+	mixer_mute(&mpctx->mixer);
 }
 
 
@@ -3531,6 +3682,20 @@ if(step_sec>0) {
     loop_seek = 1;
   }
 
+  if (mpctx->eof == 1)
+  {
+fprintf(stderr, "Pausing at the EOS\n");fflush(stderr);
+printf("EOF code: %d  \n",mpctx->eof);
+fflush(stdout);
+	  mpctx->eof = 0;
+	  if (!rel_seek_secs && !abs_seek_pos)
+	  {
+		  // Pause at the EOS, but this may be frame consumption from a seek, which means don't
+		  mpctx->osd_function = OSD_PAUSE;
+		  usec_sleep(100000);
+	  }
+  }
+
 if(rel_seek_secs || abs_seek_pos){
   if (seek(mpctx, rel_seek_secs, abs_seek_pos) >= 0) {
         // Set OSD:
@@ -3577,7 +3742,8 @@ if(rel_seek_secs || abs_seek_pos){
 
 } // while(!mpctx->eof)
 
-mp_msg(MSGT_GLOBAL,MSGL_V,"EOF code: %d  \n",mpctx->eof);
+printf("EOF code: %d  \n",mpctx->eof);
+fflush(stdout);
 
 #ifdef HAS_DVBIN_SUPPORT
 if(mpctx->dvbin_reopen)

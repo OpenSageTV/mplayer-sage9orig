@@ -1,3 +1,4 @@
+#include "config.h"
 /*
  SMJPEG file parser by Alex Beregszaszi
  

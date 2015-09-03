@@ -1,3 +1,4 @@
+#include "config.h"
 /*
  * tivo@wingert.org, February 2003
  *

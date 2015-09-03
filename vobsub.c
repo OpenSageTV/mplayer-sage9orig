@@ -2,6 +2,7 @@
  * Some code freely inspired from VobSub <URL:http://vobsub.edensrising.com>,
  * with kind permission from Gabest <gabest@freemail.hu>
  */
+#include "config.h"
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
@@ -14,7 +15,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "config.h"
 #include "version.h"
 
 #include "vobsub.h"

@@ -9,7 +9,7 @@
 /*
  * Modified for use with MPlayer, detailed changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: ext.c 22431 2007-03-04 09:04:45Z reimar $
+ * $Id: ext.c,v 1.3 2007-04-10 19:33:29 Narflex Exp $
  */
 
 #include "config.h"

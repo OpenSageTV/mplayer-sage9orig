@@ -1,3 +1,4 @@
+#include "config.h"
 /*
         RoQ file demuxer for the MPlayer program
         by Mike Melanson

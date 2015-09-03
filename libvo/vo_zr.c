@@ -3,7 +3,7 @@
  * Copyright (C) Rik Snel 2001,2002, License GNU GPL v2
  */
 
-/* $Id: vo_zr.c 16172 2005-08-05 01:24:37Z ivo $ */
+/* $Id: vo_zr.c,v 1.3 2006-06-14 13:39:16 Narflex Exp $ */
 
 #include <stdio.h>
 #include <stdlib.h>

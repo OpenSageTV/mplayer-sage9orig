@@ -1,3 +1,4 @@
+#include "config.h"
 //  VIVO file parser by A'rpi
 //  VIVO text header parser and audio support by alex
 

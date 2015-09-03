@@ -1,3 +1,4 @@
+#include "config.h"
 /*
     Realaudio demuxer for MPlayer
 		(c) 2003, 2005 Roberto Togni

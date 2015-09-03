@@ -15,12 +15,12 @@
  * For an excellent introduction to the JPEG format, see:
  * http://www.ece.purdue.edu/~bouman/grad-labs/lab8/pdf/lab.pdf
  */
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
 
-#include "config.h"
 #include "mp_msg.h"
 
 #include "img_format.h"

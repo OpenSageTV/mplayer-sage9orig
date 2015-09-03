@@ -1,3 +1,4 @@
+#include "config.h"
 /*=============================================================================
 //	
 //  This software has been released under the terms of the GNU General Public

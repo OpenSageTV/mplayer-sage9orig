@@ -1,3 +1,4 @@
+#include "config.h"
 /*
    ad.c - audio decoder interface
 */

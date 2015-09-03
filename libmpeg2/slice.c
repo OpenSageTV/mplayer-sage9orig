@@ -23,7 +23,7 @@
  *
  * Modified for use with MPlayer, see libmpeg-0.4.1.diff for the exact changes.
  * detailed changelog at http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: slice.c 21941 2007-01-16 09:49:28Z henry $
+ * $Id: slice.c,v 1.3 2007-04-10 19:33:27 Narflex Exp $
  */
 
 #include "config.h"

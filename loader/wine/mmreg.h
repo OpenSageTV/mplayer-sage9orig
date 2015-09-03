@@ -3,7 +3,7 @@
  *
  * Modified for use with MPlayer, detailed changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: mmreg.h 18786 2006-06-22 13:34:00Z diego $
+ * $Id: mmreg.h,v 1.3 2007-04-10 19:33:31 Narflex Exp $
  *
  */
 

@@ -82,6 +82,8 @@ static int visible_buf = -1;    // -1 means: no buffer was drawn yet
 static XvImage *xvimage[NUM_BUFFERS];
 
 
+static uint32_t image_x = 0;
+static uint32_t image_y = 0;
 static uint32_t image_width;
 static uint32_t image_height;
 static uint32_t image_format;
@@ -92,6 +94,7 @@ static int int_pause;
 static Window mRoot;
 static uint32_t drwX, drwY, drwBorderWidth, drwDepth;
 static uint32_t max_width = 0, max_height = 0; // zero means: not set
+static int windowevents;
 
 static void (*draw_alpha_fnc) (int x0, int y0, int w, int h,
                                unsigned char *src, unsigned char *srca,
@@ -185,6 +188,8 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
     static uint32_t vm_height;
 #endif
 
+    image_x = 0;
+    image_y = 0;
     image_height = height;
     image_width = width;
     image_format = format;
@@ -287,12 +292,13 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
                                         &xswa);
                 vo_x11_selectinput_witherr(mDisplay, vo_window,
                                            StructureNotifyMask |
-                                           KeyPressMask |
                                            PropertyChangeMask |
-                                           PointerMotionMask |
+                                           ExposureMask |
+                                           ( windowevents ? KeyPressMask |
                                            ButtonPressMask |
                                            ButtonReleaseMask |
-                                           ExposureMask);
+                                             PointerMotionMask : 0)
+                                           );
                 XMapWindow(mDisplay, vo_window);
                 XGetGeometry(mDisplay, vo_window, &mRoot,
                              &drwX, &drwY, &vo_dwidth, &vo_dheight,
@@ -508,7 +514,7 @@ static inline void put_xvimage( XvImage * xvi )
     if (Shmem_Flag)
     {
         XvShmPutImage(mDisplay, xv_port, vo_window, vo_gc,
-                      xvi, 0, 0, image_width,
+                      xvi, image_x, image_y, image_width,
                       image_height, drwX - (vo_panscan_x >> 1),
                       drwY - (vo_panscan_y >> 1), vo_dwidth + vo_panscan_x,
                       vo_dheight + vo_panscan_y,
@@ -517,7 +523,7 @@ static inline void put_xvimage( XvImage * xvi )
 #endif
     {
         XvPutImage(mDisplay, xv_port, vo_window, vo_gc,
-                   xvi, 0, 0, image_width, image_height,
+                   xvi, image_x, image_y, image_width, image_height,
                    drwX - (vo_panscan_x >> 1), drwY - (vo_panscan_y >> 1),
                    vo_dwidth + vo_panscan_x,
                    vo_dheight + vo_panscan_y);
@@ -769,9 +775,11 @@ static int preinit(const char *arg)
       {  "port",      OPT_ARG_INT, &xv_port,       (opt_test_f)int_pos },
       {  "ck",        OPT_ARG_STR, &ck_src_arg,    xv_test_ck },
       {  "ck-method", OPT_ARG_STR, &ck_method_arg, xv_test_ckm },
+      {  "windowevents", OPT_ARG_INT, &windowevents, (opt_test_f)int_non_neg },
       {  NULL }
     };
 
+    windowevents=1;
     xv_port = 0;
 
     /* parse suboptions */
@@ -951,6 +959,23 @@ static int control(uint32_t request, void *data, ...)
         case VOCTRL_UPDATE_SCREENINFO:
             update_xinerama_info();
             return VO_TRUE;
+        case VOCTRL_RECTANGLES: 
+            {
+                int* rectInfo = (int*) data;
+                printf("sx=%d sy=%d sw=%d sh=%d dx=%d dy=%d dw=%d dh=%d\r\n",
+                    rectInfo[0],rectInfo[1],rectInfo[2],rectInfo[3],
+                    rectInfo[4],rectInfo[5],rectInfo[6],rectInfo[7]);
+                image_x=rectInfo[0];
+                image_y=rectInfo[1];
+                image_width=rectInfo[2];
+                image_height=rectInfo[3];
+                drwX=rectInfo[4];
+                drwY=rectInfo[5];
+                vo_dwidth=rectInfo[6];
+                vo_dheight=rectInfo[7];
+//                flip_page();
+                return VO_TRUE;
+            }
     }
     return VO_NOTIMPL;
 }

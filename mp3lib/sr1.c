@@ -11,7 +11,7 @@
 
 //#undef LOCAL
 //#define LOCAL
-
+#include		"config.h"
 #include        <stdlib.h>
 #include        <stdio.h>
 #include        <string.h>
@@ -69,7 +69,7 @@ extern int mp3_read(char *buf,int size);
 /*
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: sr1.c 22158 2007-02-05 19:24:03Z reimar $
+ * $Id: sr1.c,v 1.5 2007-08-22 15:49:42 Narflex Exp $
  */
 
 

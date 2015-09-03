@@ -20,8 +20,15 @@
  */
 #include "avformat.h"
 #include <fcntl.h>
+#ifndef __MINGW32__
 #include <unistd.h>
+#include <sys/ioctl.h>
 #include <sys/time.h>
+#else
+#include <io.h>
+#define open(fname,oflag,pmode) _open(fname,oflag,pmode)
+#define wopen(fname,oflag,pmode) _wopen(fname,oflag,pmode)
+#endif /* __MINGW32__ */
 
 
 /* standard file protocol */
@@ -43,7 +50,42 @@ static int file_open(URLContext *h, const char *filename, int flags)
 #if defined(__MINGW32__) || defined(CONFIG_OS2) || defined(__CYGWIN__)
     access |= O_BINARY;
 #endif
+#ifdef __MINGW32__
+	// Check for UTF-8 unicode pathname
+	int strl = strlen(filename);
+	wchar_t* wfilename = av_malloc(sizeof(wchar_t) * (1 + strl));
+	int wpos = 0;
+	int i = 0;
+	for (i = 0; i < strl; i++)
+	{
+		wfilename[wpos] = 0;
+		if ((filename[i] & 0x80) == 0)
+		{
+			// ASCII character
+			wfilename[wpos++] = filename[i];
+		}
+		else if (i + 1 < strl && ((filename[i] & 0xE0) == 0xC0) && ((filename[i + 1] & 0xC0) == 0x80))
+		{
+			// two octets for this character
+			wfilename[wpos++] = ((filename[i] & 0x1F) << 6) + (filename[i + 1] & 0x3F);
+			i++;
+		}
+		else if (i + 2 < strl && ((filename[i] & 0xF0) == 0xE0) && ((filename[i + 1] & 0xC0) == 0x80) && 
+			((filename[i + 2] & 0xC0) == 0x80))
+		{
+			// three octets for this character
+			wfilename[wpos++] = ((filename[i] & 0x0F) << 12) + ((filename[i + 1] & 0x3F) << 6) + (filename[i + 2] & 0x3F);
+			i+=2;
+		}
+		else
+			wfilename[wpos++] = filename[i];
+	}
+	wfilename[wpos] = 0;
+	fd = wopen(wfilename, access, 0666);
+	av_free(wfilename);
+#else
     fd = open(filename, access, 0666);
+#endif
     if (fd < 0)
         return AVERROR(ENOENT);
     h->priv_data = (void *)(size_t)fd;
@@ -53,7 +95,20 @@ static int file_open(URLContext *h, const char *filename, int flags)
 static int file_read(URLContext *h, unsigned char *buf, int size)
 {
     int fd = (size_t)h->priv_data;
-    return read(fd, buf, size);
+    int rv;
+	do
+	{
+		rv = read(fd, buf, size);
+		if (rv <= 0 && ((h->flags & URL_ACTIVEFILE) == URL_ACTIVEFILE))
+		{
+			usleep(20000);
+	        if (url_interrupt_cb())
+	            return -EINTR;
+ 		}
+		else
+			break;
+	} while (1);
+	return rv;
 }
 
 static int file_write(URLContext *h, unsigned char *buf, int size)

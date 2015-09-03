@@ -1,3 +1,4 @@
+#include "config.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -7,7 +8,6 @@
 #include <fcntl.h>
 #include <string.h>
 
-#include "config.h"
 #include "mp_msg.h"
 #include "help_mp.h"
 

@@ -1,3 +1,4 @@
+#include "config.h"
 /*
  * Demultiplexer for MPEG2 Transport Streams.
  *
@@ -234,6 +235,10 @@ typedef struct {
 	int last_vid;
 	char packet[TS_FEC_PACKET_SIZE];
 	TS_stream_info vstr, astr;
+	float first_pts;
+	float last_pts;
+	float final_pts;
+	int has_valid_timestamps;
 } ts_priv_t;
 
 
@@ -681,16 +686,16 @@ static off_t ts_detect_streams(demuxer_t *demuxer, tsdemux_init_t *param)
 
 			if(is_video)
 			{
-				mp_msg(MSGT_IDENTIFY, MSGL_V, "ID_VIDEO_ID=%d\n", es.pid);
+//				mp_msg(MSGT_IDENTIFY, MSGL_V, "ID_VIDEO_ID=%d\n", es.pid);
     				chosen_pid = (req_vpid == es.pid);
 				if((! chosen_pid) && (req_vpid > 0))
 					continue;
 			}
 			else if(is_audio)
 			{
-				mp_msg(MSGT_IDENTIFY, MSGL_V, "ID_AUDIO_ID=%d\n", es.pid);
-				if (es.lang[0] > 0)
-					mp_msg(MSGT_IDENTIFY, MSGL_V, "ID_AID_%d_LANG=%s\n", es.pid, es.lang);
+//				mp_msg(MSGT_IDENTIFY, MSGL_V, "ID_AUDIO_ID=%d\n", es.pid);
+//				if (es.lang[0] > 0)
+//					mp_msg(MSGT_IDENTIFY, MSGL_V, "ID_AID_%d_LANG=%s\n", es.pid, es.lang);
 				if(req_apid > 0)
 				{
 					chosen_pid = (req_apid == es.pid);
@@ -1052,6 +1057,53 @@ static demuxer_t *demux_open_ts(demuxer_t * demuxer)
 		priv->pmt[i].section.buffer_len = 0;
 	
 	demuxer->filepos = stream_tell(demuxer->stream);
+	
+	stream_t *s = demuxer->stream;
+	off_t pos = stream_tell(s);
+	off_t end_seq_start = demuxer->movi_end-500000; // 500000 is a wild guess (good guess, confirmed by Narflex)
+	float half_pts = 0.0;
+	priv->first_pts = priv->last_pts = priv->final_pts = 0;
+	priv->has_valid_timestamps = 1;
+	if (!ds_fill_buffer(demuxer->video)) 
+	{
+		demuxer->priv = 0;
+		free(priv);
+		return 0;
+	}
+	priv->first_pts = priv->last_pts;
+	printf("INITIAL_PTS=%f\n", priv->first_pts);
+	// Don't do the PTS guesswork here if we're an activeFile
+	if (demuxer->seekable && stream_tell(demuxer->stream) < end_seq_start && !s->activeFileFlag) 
+	{
+		stream_seek(s,(pos + end_seq_start / 2));
+		while ((!s->eof) && ds_fill_buffer(demuxer->video) && half_pts == 0.0) 
+		{
+			half_pts = priv->last_pts;
+		}
+		stream_seek(s,end_seq_start);
+		while ((!s->eof) && ds_fill_buffer(demuxer->video)) 
+		{
+			  if (priv->final_pts < priv->last_pts) priv->final_pts = priv->last_pts;
+		}
+		if (priv->final_pts > 0)
+		{
+			printf("DURATION=%f\n", priv->final_pts);
+			fflush(stdout);
+		}
+		// educated guess about validity of timestamps; this is wrong since the initial pts isn't taken into account
+		/*	  if (mpg_d->final_pts > 3 * half_pts || mpg_d->final_pts < 1.5 * half_pts) {
+		  mpg_d->has_valid_timestamps = 0;
+		}*/
+		ds_free_packs(demuxer->audio);
+		ds_free_packs(demuxer->video);
+		demuxer->stream->eof=0; // clear eof flag
+		demuxer->video->eof=0;
+		demuxer->audio->eof=0;
+
+		stream_seek(s,pos);
+		ds_fill_buffer(demuxer->video);
+	}
+	
 	return demuxer;
 }
 
@@ -1081,7 +1133,7 @@ static void demux_close_ts(demuxer_t * demuxer)
 		free(priv);
 	}
 	demuxer->priv=NULL;
-}
+	}
 
 
 extern unsigned char mp_getbits(unsigned char*, unsigned int, unsigned char);
@@ -1196,7 +1248,7 @@ static int mp4_parse_sl_packet(pmt_t *pmt, uint8_t *buf, uint16_t packet_len, in
 		{
 			dts_flag = getbits(buf, n++, 1);
 			cts_flag = getbits(buf, n++, 1);
-		}
+}
 		if(sl->instant_bitrate_len)
 			ib_flag = getbits(buf, n++, 1);
 		if(packet_len * 8 <= n+8)
@@ -1273,6 +1325,7 @@ static int pes_parse2(unsigned char *buf, uint16_t packet_len, ES_stream_t *es, 
 		mp_msg(MSGT_DEMUX, MSGL_DBG2, "pes_parse2, BUFFER LEN IS TOO SMALL OR TOO BIG: %d EXIT\n", packet_len);
 		return 0;
 	}
+
 
 	p = buf;
 	pkt_len = packet_len;
@@ -1461,6 +1514,7 @@ static int pes_parse2(unsigned char *buf, uint16_t packet_len, ES_stream_t *es, 
 
 			if(es->payload_size)
 				es->payload_size -= packet_len;
+
 			return 1;
 		}
 	}
@@ -1612,7 +1666,7 @@ static int collect_section(ts_section_t *section, int is_start, unsigned char *b
 	}
 	
 	return skip+1;
-}
+	}
 
 static int parse_pat(ts_priv_t * priv, int is_start, unsigned char *buff, int size)
 {
@@ -1646,6 +1700,7 @@ static int parse_pat(ts_priv_t * priv, int is_start, unsigned char *buff, int si
 	mp_msg(MSGT_DEMUX, MSGL_V, "PARSE_PAT: section_len: %d, section %d/%d\n", priv->pat.section_length, priv->pat.section_number, priv->pat.last_section_number);
 
 	entries = (int) (priv->pat.section_length - 9) / 4;	//entries per section
+
 
 	for(i=0; i < entries; i++)
 	{
@@ -2556,6 +2611,14 @@ static int fill_packet(demuxer_t *demuxer, demux_stream_t *ds, demux_packet_t **
 					priv->vbitrate = (uint32_t) ((float) si->size / dur);
 			}
 		}
+			if (ds)
+			{
+				if (demuxer->priv && (*dp)->pts)
+				{
+					((ts_priv_t*)demuxer->priv)->last_pts = (*dp)->pts;
+//printf("PTS=%f\n", (float) (*dp)->pts);
+				}
+			}
 	}
 
 	*dp = NULL;
@@ -3060,6 +3123,9 @@ extern int videobuf_code_len;
 extern int sync_video_packet(demux_stream_t *);
 extern int skip_video_packet(demux_stream_t *);
 
+// flags = 1, absolute seek
+// flags = 3, percentage seek
+// flags = 0, relative seek
 static void demux_seek_ts(demuxer_t *demuxer, float rel_seek_secs, float audio_delay, int flags)
 {
 	demux_stream_t *d_audio=demuxer->audio;
@@ -3069,7 +3135,20 @@ static void demux_seek_ts(demuxer_t *demuxer, float rel_seek_secs, float audio_d
 	sh_video_t *sh_video=d_video->sh;
 	ts_priv_t * priv = (ts_priv_t*) demuxer->priv;
 	int i, video_stats;
-	off_t newpos;
+	int precision = 1;
+	float oldpts = 0;
+	off_t oldpos = demuxer->filepos;
+	float newpts = 0; 
+	off_t newpos = (flags & 1) ? demuxer->movi_start : oldpos;
+
+	if(priv)
+	  oldpts = priv->last_pts;
+	newpts = (flags & 1) ? 0.0 : oldpts;
+#ifdef WIN32
+printf("Seeking oldpts=%f oldpos=%I64d\n", oldpts, oldpos);fflush(stdout);
+#else
+printf("Seeking oldpts=%f oldpos=%lld\n", oldpts, oldpos);fflush(stdout);
+#endif
 
 	//================= seek in MPEG-TS ==========================
 
@@ -3084,7 +3163,6 @@ static void demux_seek_ts(demuxer_t *demuxer, float rel_seek_secs, float audio_d
 	if(demuxer->sub->id > 0)
 		ds_free_packs(d_sub);
 
-
 	video_stats = (sh_video != NULL);
 	if(video_stats)
 	{
@@ -3095,29 +3173,129 @@ static void demux_seek_ts(demuxer_t *demuxer, float rel_seek_secs, float audio_d
 			video_stats = sh_video->i_bps;
 	}
 
-	newpos = (flags & 1) ? demuxer->movi_start : demuxer->filepos;
-	if(flags & 2) // float seek 0..1
+	//calculate the pts to seek to
+	if(flags & 2) {
+	  if (priv && priv->final_pts > 0.0)
+			newpts += priv->final_pts * rel_seek_secs;
+		else
+			newpts += rel_seek_secs * (demuxer->movi_end - demuxer->movi_start) * oldpts / oldpos;
+	} else
+		newpts += rel_seek_secs;
+	if (newpts < 0) newpts = 0;
+
+	if(flags&2){
+		// float seek 0..1
 		newpos+=(demuxer->movi_end-demuxer->movi_start)*rel_seek_secs;
+	}
 	else
 	{
 		// time seek (secs)
-		if(! video_stats) // unspecified or VBR
+/*		if(! video_stats) // unspecified or VBR
 			newpos += 2324*75*rel_seek_secs; // 174.3 kbyte/sec
 		else
-			newpos += video_stats*rel_seek_secs;
+			newpos += video_stats*rel_seek_secs;*/
+		// Better seeking algorithm
+		if (priv)
+	{
+			if (oldpts > 1.0) // we don't want to use something really close to the front of the file
+			{
+				if (abs(newpts - oldpts) < 0.03)
+				{
+					newpos = oldpos;
+				}
+				else if (newpts > oldpts)
+				{
+					if (priv->final_pts > 0.0)
+					{
+						// Average between the recent time and the end time
+						off_t byteDiff = demuxer->movi_end - oldpos;
+						float timeDiff = priv->final_pts - oldpts;
+						newpos = (newpts - oldpts)*byteDiff/timeDiff;
+						newpos += oldpos;
+					}
+					else
+					{
+						// add the ratebound guess offset from the recent; but redo
+						// the ratebound so it uses a guess from the data in the file since
+						// the header is usually wrong
+						float guessRate = oldpos/(oldpts - priv->first_pts);
+						newpos = oldpos + (newpts - oldpts)*guessRate;
+					}
+				}
+				else // if (rtTime < recentTime)
+				{
+					// Average between the recent time and the start time (0)
+					newpos = (newpts - priv->first_pts)*oldpos/(oldpts - priv->first_pts);
+				}
+			}
+			else if (priv->final_pts > 0.0)
+			{
+				newpos = (newpts - priv->first_pts)* demuxer->movi_end / (priv->final_pts - priv->first_pts);
+			}
+			else
+				newpos = newpts * video_stats;
+		}
+		else if(!video_stats) // unspecified or VBR
+			newpos+=2324*75*(rel_seek_secs - priv->first_pts); // 174.3 kbyte/sec
+		else
+			newpos+=video_stats*(rel_seek_secs - priv->first_pts);
 	}
 
 
-	if(newpos < demuxer->movi_start)
-  		newpos = demuxer->movi_start;	//begininng of stream
+	// Be sure the newpos is not beyond the end of the file,
+	if (priv->final_pts > 0.0 && demuxer->movi_end > 0)
+	{
+		newpos = FFMIN(demuxer->movi_end, newpos);
+	}
+	else
+	{
+		// find the size of the file
+		if (demuxer->stream->size)
+		{
+			off_t fileSize = 0;
+			demuxer->stream->size(demuxer->stream, &fileSize);
+			if (fileSize - 200000 < newpos)
+			{
+				newpos = fileSize - 200000;
+				if (newpos < 0)
+					newpos = 0;
+				precision = 0;
+			}
+		}
+		else
+		{
+			printf("ERROR ERROR ERROR getting file stat information, streaming plugin doesn't support it!\r\n");
+		}
+	}
 
+  
+	while (1) {
+#ifdef WIN32
+printf("Seeking newpts=%f newpos=%I64d\n", newpts, newpos);fflush(stdout);
+#else
+printf("Seeking newpts=%f newpos=%lld\n", newpts, newpos);fflush(stdout);
+#endif
+		if(newpos<demuxer->movi_start){
+			if(demuxer->stream->type!=STREAMTYPE_VCD) demuxer->movi_start=0; // for VCD
+			if(newpos<demuxer->movi_start) newpos=demuxer->movi_start;
+		}
+  
+  
+#ifdef _LARGEFILE_SOURCE
+		newpos&=~((long long)stream_buffer_size-1);  /* sector boundary */
+#else
+	newpos &= ~(stream_buffer_size - 1);  /* sector boundary */
+#endif
+		// This seeks the input stream to the newpos
 	stream_seek(demuxer->stream, newpos);
 	for(i = 0; i < 8192; i++)
 		if(priv->ts.pids[i] != NULL)
 			priv->ts.pids[i]->is_synced = 0;
+		// re-sync video:
+		videobuf_code_len=0; // reset ES stream buffer
 
-	videobuf_code_len = 0;
-
+		// This will read packets from the file stream and put them into the specified substream (A or V),
+		// it reads until it gets data for the specified type
 	if(sh_video != NULL)
 		ds_fill_buffer(d_video);
 
@@ -3125,8 +3303,10 @@ static void demux_seek_ts(demuxer_t *demuxer, float rel_seek_secs, float audio_d
 	{
 		ds_fill_buffer(d_audio);
 	}
+//	}
 
-	while(sh_video != NULL)
+//printf("Seeked to pts=%f pos=%lld\n", mpg_d->last_pts, newpos);fflush(stdout);
+		while(1)
 	{
 		if(sh_audio && !d_audio->eof && d_video->pts && d_audio->pts)
 		{
@@ -3155,6 +3335,55 @@ static void demux_seek_ts(demuxer_t *demuxer, float rel_seek_secs, float audio_d
 		}
 
 		if(!i || !skip_video_packet(d_video)) break; // EOF?
+			// This was the code from the PS demux, above is the code from the TS demux
+			/*int i;
+			if(sh_audio && !d_audio->eof && d_video->pts && d_audio->pts)
+			{
+				float a_pts=d_audio->pts;
+				a_pts+=(ds_tell_pts(d_audio)-sh_audio->a_in_buffer_len)/(float)sh_audio->i_bps;
+				if(d_video->pts>a_pts)
+				{
+					skip_audio_frame(sh_audio);  // sync audio
+					continue;
+				}
+			}
+			i=sync_video_packet(d_video);
+			if(sh_video->format == 0x10000004) 
+			{	//mpeg4
+				if(i==0x1B6) 
+				{			//vop (frame) startcode
+				  int pos = videobuf_len;
+				  if(!read_video_packet(d_video)) break; // EOF
+				  if((videobuffer[pos+4] & 0x3F) == 0) break;	//I-frame
+				}
+			 }
+			else if(sh_video->format == 0x10000005)
+			{	//h264
+				if((i & ~0x60) == 0x101 || (i & ~0x60) == 0x102 || (i & ~0x60) == 0x105) break;
+			}
+			else
+			{	//default mpeg1/2
+				if(i==0x1B3 || i==0x1B8) break; // found it!
+			}
+			if(!i || !skip_video_packet(d_video)) break; // EOF?*/
+		}
+		if(!priv)
+		  break;
+		if (!precision || abs(newpts - priv->last_pts) < 1.1 || (priv->last_pts == oldpts)) break;
+		if ((newpos - oldpos) * (priv->last_pts - oldpts) < 0) { // invalid timestamps
+			priv->has_valid_timestamps = 0;
+			break;
+		}
+		precision--;
+		//prepare another seek because we are off by more than 0.5s
+		if(priv) {
+			newpos += (newpts - priv->last_pts) * (newpos - oldpos) / (priv->last_pts - oldpts);
+			ds_free_packs(d_audio);
+			ds_free_packs(d_video);
+			demuxer->stream->eof=0; // clear eof flag
+			d_video->eof=0;
+			d_audio->eof=0;
+		}
 	}
 }
 

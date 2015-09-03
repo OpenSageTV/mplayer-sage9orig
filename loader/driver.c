@@ -1,7 +1,7 @@
 /*
  * Modified for use with MPlayer, detailed changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: driver.c 21277 2006-11-26 18:33:41Z diego $
+ * $Id: driver.c,v 1.3 2007-04-10 19:33:29 Narflex Exp $
  */
 
 #include "config.h"

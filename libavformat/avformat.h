@@ -152,6 +152,7 @@ typedef struct AVFormatParameters {
     int initial_pause:1;       /**< do not begin to play the stream
                                   immediately (RTSP only) */
     int prealloced_context:1;
+	int dump_metadata:1;       /* dump the metadata for the parsed media to stderr */
     enum CodecID video_codec_id;
     enum CodecID audio_codec_id;
 } AVFormatParameters;

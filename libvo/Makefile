@@ -23,3 +23,8 @@ SRCS_COMMON-$(BITMAP_FONT) +=  font_load.c
 SRCS_COMMON-$(FREETYPE)    +=  font_load_ft.c
 
 include ../mpcommon.mak
+
+vo_macstv_ipc.h vo_macstv_user.c: vo_macstv_ipc.defs
+	mig -header vo_macstv_ipc.h -user vo_macstv_user.c -sheader /dev/null -server /dev/null vo_macstv_ipc.defs
+
+vo_macstv.c: vo_macstv_ipc.h

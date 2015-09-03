@@ -2032,6 +2032,12 @@ typedef struct AVCodecContext {
      */
     int scenechange_factor;
 
+	/**
+	 * If it's a video stream, this is 1 if its interlaced. This is actually a per-frame
+	 * condition, but we want it for streams quite often and this is the only way to handle
+	 * the deallocation of the frame data.
+	 */
+	int interlaced;
     /**
      *
      * note: value depends upon the compare functin used for fullpel ME
@@ -2308,6 +2314,7 @@ extern AVCodec msvideo1_decoder;
 extern AVCodec mszh_decoder;
 extern AVCodec nuv_decoder;
 extern AVCodec oggvorbis_decoder;
+extern AVCodec oggivorbis_decoder;
 extern AVCodec png_decoder;
 extern AVCodec qdm2_decoder;
 extern AVCodec qdraw_decoder;

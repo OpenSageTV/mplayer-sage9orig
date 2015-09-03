@@ -2,6 +2,7 @@
    channels and can be used for simple position panning. Extension for
    this filter would be a reverb.
 */
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

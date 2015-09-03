@@ -1,10 +1,10 @@
 //  AVI file parser for DEMUXER v2.9  by A'rpi/ESP-team
+#include "config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "config.h"
 #include "mp_msg.h"
 #include "help_mp.h"
 
@@ -252,7 +252,13 @@ do{
 	// quit now, we can't even (no enough buffer memory) read this packet :(
 	return -1;
     }
-  
+    // NOTE: Added by Narflex 7/27/06 - With HDTV MPEG4 AVIs I created MPlayer would crash
+    // on load of them because it think it had read an audio pack, but the audio buffer was still null.
+	// by only returning success from fill_buffer when we actually have read data, the problem
+	// was alleviated. I don't think this should have any negative side effects, but I'm not sure at this point...
+	// 7/13/07 - This was causing A/V sync issues with H.264 playback so I put it back the way it was. If I find
+	// a test case again where it crashes I better save that test case this time!
+//  if (!len) continue;
   ret=demux_avi_read_packet(demux,ds,id,len,priv->idx_pos-1,flags);
 } while(ret!=1);
   return 1;

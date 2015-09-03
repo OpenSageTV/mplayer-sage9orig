@@ -3,7 +3,7 @@
  *
  * Modified for use with MPlayer, detailed changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: vfl.c 18883 2006-07-02 03:59:36Z reynaldo $
+ * $Id: vfl.c,v 1.3 2007-04-10 19:33:29 Narflex Exp $
  *
  */
 #include <config.h>

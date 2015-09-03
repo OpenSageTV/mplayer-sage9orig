@@ -1,9 +1,9 @@
 /* strsep implementation for systems that do not have it in libc */
 
+#include "config.h"
 #include <stdio.h>
 #include <string.h>
 
-#include "config.h"
 
 char *strsep(char **stringp, const char *delim) {
   char *begin, *end;

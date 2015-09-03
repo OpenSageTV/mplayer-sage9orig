@@ -1,3 +1,4 @@
+#include "config.h"
 /* 
  * vo_png.c, Portable Network Graphics Renderer for MPlayer
  *

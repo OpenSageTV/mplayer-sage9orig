@@ -144,10 +144,14 @@ static VLC huff_quad_vlc[2];
 static uint16_t band_index_long[9][23];
 /* XXX: free when all decoders are closed */
 #define TABLE_4_3_SIZE (8191 + 16)*4
+#ifdef EM8622
+#include "mp3table.h"
+#else
 static int8_t  table_4_3_exp[TABLE_4_3_SIZE];
 static uint32_t table_4_3_value[TABLE_4_3_SIZE];
 static uint32_t exp_table[512];
 static uint32_t expval_table[512][16];
+#endif
 /* intensity stereo coef table */
 static int32_t is_table[2][16];
 static int32_t is_table_lsf[2][2][16];
@@ -296,11 +300,28 @@ static int int_pow(int i, int *exp_ptr)
 }
 #endif
 
+#ifdef EM8622
+#include <sys/time.h>
+
+static long long inittime=0;
+
+static long long get_timebase()
+{
+  struct timeval tm;
+  gettimeofday(&tm, 0);
+  return tm.tv_sec * 1000000LL + (tm.tv_usec);
+}
+#endif
+
 static int decode_init(AVCodecContext * avctx)
 {
     MPADecodeContext *s = avctx->priv_data;
     static int init=0;
     int i, j, k;
+
+#ifdef EM8622
+    long long startinittime = get_timebase();
+#endif
 
     s->avctx = avctx;
 
@@ -386,6 +407,7 @@ static int decode_init(AVCodecContext * avctx)
         /* compute n ^ (4/3) and store it in mantissa/exp format */
 
         int_pow_init();
+#ifndef EM8622
         for(i=1;i<TABLE_4_3_SIZE;i++) {
             double f, fm;
             int e, m;
@@ -406,6 +428,15 @@ static int decode_init(AVCodecContext * avctx)
             if((i&15)==1)
                 exp_table[exponent]= llrint(f);
         }
+#else
+    // Linking problem...
+        {
+            double f, fm;
+            int e, m;
+            f=1.0f;
+            fm = frexp(f, &e);
+        }
+#endif
 
         for(i=0;i<7;i++) {
             float f;
@@ -502,6 +533,10 @@ static int decode_init(AVCodecContext * avctx)
         }
 #endif
         init = 1;
+#ifdef EM8622
+#undef fprintf
+    fprintf(stderr,"mp3 init time %lld\n",get_timebase()-startinittime);
+#endif
     }
 
 #ifdef DEBUG
@@ -2557,7 +2592,7 @@ retry:
     if(ff_mpa_check_header(header) < 0){
         buf++;
 //        buf_size--;
-        av_log(avctx, AV_LOG_ERROR, "Header missing skipping one byte.\n");
+//        av_log(avctx, AV_LOG_ERROR, "Header missing skipping one byte.\n");
         goto retry;
     }
 

@@ -7,7 +7,7 @@
  *
  * Modified for use with MPlayer, changes contained in libdvdread_changes.diff.
  * detailed changelog at http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: ifo_types.h 20999 2006-11-18 00:45:16Z diego $
+ * $Id: ifo_types.h,v 1.1 2007-04-10 19:55:02 Narflex Exp $
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

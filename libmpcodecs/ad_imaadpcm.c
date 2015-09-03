@@ -1,3 +1,4 @@
+#include "config.h"
 /*
     IMA ADPCM Decoder for MPlayer
       by Mike Melanson

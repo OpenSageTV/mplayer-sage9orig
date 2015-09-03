@@ -3971,7 +3971,7 @@ static int encode_init(AVCodecContext *avctx)
             avctx->stats_out = av_mallocz(256);
     }
     if((avctx->flags&CODEC_FLAG_PASS2) || !(avctx->flags&CODEC_FLAG_QSCALE)){
-        if(ff_rate_control_init(&s->m) < 0)
+        if(ff_rate_control_init(&s->m, 0) < 0)
             return -1;
     }
     s->pass1_rc= !(avctx->flags & (CODEC_FLAG_QSCALE|CODEC_FLAG_PASS2));

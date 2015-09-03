@@ -22,7 +22,7 @@
 ** Commercial non-GPL licensing of this software is possible.
 ** For more info contact Ahead Software through Mpeg4AAClicense@nero.com.
 **
-** $Id: drm_dec.h 18142 2006-04-18 19:39:34Z rtognimp $
+** $Id: drm_dec.h,v 1.1 2006-06-14 13:39:13 Narflex Exp $
 **/
 
 #ifndef __DRM_DEC_H__

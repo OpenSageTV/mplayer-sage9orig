@@ -260,6 +260,106 @@ static int flv_read_header(AVFormatContext *s,
     return 0;
 }
 
+static int64_t flv_read_timestamp(AVFormatContext *s, int stream_index, int64_t *pos_arg, int64_t pos_limit)
+{
+    int64_t pos, pts;
+	int type, size, flags;
+	int extraBytes[6];
+	int pad;
+	int i,j;
+#ifdef DEBUG_SEEK
+	printf("FLV Seek stream_index=%d pos=0x%llx\n", stream_index, *pos_arg);
+#endif
+    pos = *pos_arg;
+	// Skip 4 bytes for the previous tag size or searching from a size one byte further will read back the same location
+    url_fseek(&s->pb, pos + 4, SEEK_SET);
+    for(;;) {
+		// We may not be at a valid point in the stream
+		if (url_feof(&s->pb))
+            return AV_NOPTS_VALUE;
+
+		pos = url_ftell(&s->pb);
+		if (pos >= pos_limit)
+			return AV_NOPTS_VALUE;
+
+		// To see if we're at a valid point we check to see if the type byte is valid
+		// and if the padding is all zero.
+
+		//prevTagSize = get_be32(&s->pb);
+		type = get_byte(&s->pb);
+		if (type != 8 && type != 9 && type != 18)
+		{
+			continue;
+		}
+
+#ifdef DEBUG_SEEK
+	printf("FLV Seek found potential type code=%d pos=0x%llx\n", type, pos);
+#endif
+		for (i = 0; i < 6; i++)
+			extraBytes[i] = get_byte(&s->pb);
+		pad = 0;
+		for (j = 0; j < 4 && !pad; j++)
+		{
+			pad = get_byte(&s->pb);
+			if (pad != 0)
+			{
+				// Now we see if there were any valid type markers in the data we've read. If so
+				// then we'll need to seek back to check that one out further.
+				for (i = 0; i < 6; i++)
+				{
+					if (extraBytes[i] == 8 || extraBytes[i] == 9 || extraBytes[i] == 18)
+					{
+#ifdef DEBUG_SEEK
+	printf("FLV Seek found potential type ...skipping back code=%d pos=0x%llx\n", extraBytes[i], pos + 1 + i);
+#endif
+						url_fseek(&s->pb, pos + 1 + i, SEEK_SET);
+						break;
+					}
+				}
+				if (i == 6 && (pad == 8 || pad == 9 || pad == 18))
+				{
+#ifdef DEBUG_SEEK
+	printf("FLV Seek found potential type ...skipping back-2 code=%d pos=0x%llx\n", pad, pos + 7 + j);
+#endif
+					url_fseek(&s->pb, pos + 7 + j, SEEK_SET);
+				}
+			}
+		}
+		if (pad) // bad packet
+			continue;
+
+		size = (extraBytes[0] << 16) + (extraBytes[1] << 8) + extraBytes[2];
+		pts = (extraBytes[3] << 16) + (extraBytes[4] << 8) + extraBytes[5];
+
+#ifdef DEBUG_SEEK
+	printf("FLV Seek found stream tag type code=%d size=%d pts=%d\n", type, size, pts);
+#endif
+        // Check to see if the stream type matches
+		if ((type == 8 && s->streams[stream_index]->id == 1) ||
+			(type == 9 && s->streams[stream_index]->id == 0))
+		{
+#ifdef DEBUG_SEEK
+	printf("FLV Seek found matching stream index!\n");
+#endif
+			flags = get_byte(&s->pb);
+			// Make sure it's a key frame!
+		    if (type == 8 || ((flags >> 4)==1))
+			{
+#ifdef DEBUG_SEEK
+	printf("FLV Seek found keyframe!\n");
+#endif
+				// Found it!
+				break;
+			}
+			url_fskip(&s->pb, size + 3);
+			continue;
+		}
+		url_fskip(&s->pb, size + 4);
+    }
+    *pos_arg = pos - 4; // go back the previousTagSize data
+    return pts;
+}
+
 static int flv_read_packet(AVFormatContext *s, AVPacket *pkt)
 {
     int ret, i, type, size, pts, flags, is_audio, next, pos;
@@ -322,7 +422,10 @@ static int flv_read_packet(AVFormatContext *s, AVPacket *pkt)
  }
 
     // if not streamed and no duration from metadata then seek to end to find the duration from the timestamps
-    if(!url_is_streamed(&s->pb) && s->duration==AV_NOPTS_VALUE){
+	// NOTE: Narflex - do not read in the duration here because it requires seeking to the end of
+	// the stream which may not work right for active files (and we can't detect that at this point since
+	// it's not set yet). Besides, this duration isn't needed since it's also discovered when reading packets
+    if(0 && !url_is_streamed(&s->pb)){
         int size;
         const int pos= url_ftell(&s->pb);
         const int fsize= url_fsize(&s->pb);
@@ -370,18 +473,8 @@ static int flv_read_close(AVFormatContext *s)
     return 0;
 }
 
-static int flv_read_seek(AVFormatContext *s, int stream_index, int64_t timestamp, int flags)
-{
-    AVStream *st = s->streams[stream_index];
-    int index = av_index_search_timestamp(st, timestamp, flags);
-    if (index < 0)
-        return -1;
-    url_fseek(&s->pb, st->index_entries[index].pos, SEEK_SET);
-
-    return 0;
-}
-
 AVInputFormat flv_demuxer = {
+
     "flv",
     "flv format",
     0,
@@ -389,7 +482,8 @@ AVInputFormat flv_demuxer = {
     flv_read_header,
     flv_read_packet,
     flv_read_close,
-    flv_read_seek,
+	NULL,
+	flv_read_timestamp,
     .extensions = "flv",
     .value = CODEC_ID_FLV1,
 };

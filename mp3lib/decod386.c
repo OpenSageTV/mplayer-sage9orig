@@ -1,7 +1,7 @@
 /*
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: decod386.c 21065 2006-11-19 16:54:06Z reimar $
+ * $Id: decod386.c,v 1.4 2007-04-10 19:33:31 Narflex Exp $
  */
 
 /*

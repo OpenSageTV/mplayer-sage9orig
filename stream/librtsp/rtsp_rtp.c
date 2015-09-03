@@ -17,6 +17,7 @@
  *  along with this program; if not, write to the Free Software Foundation,
  *  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
+#include "config.h"
 
 #include <unistd.h>
 #include <stdio.h>
@@ -25,8 +26,6 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <inttypes.h>
-
-#include "config.h"
 
 #ifndef HAVE_WINSOCK2
 #include <netdb.h>

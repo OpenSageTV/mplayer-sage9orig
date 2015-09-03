@@ -1,10 +1,11 @@
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
 #include <sys/time.h>
 
-#include "config.h"
+#include "../config.h"
 #include "mp_msg.h"
 #include "cpudetect.h"
 

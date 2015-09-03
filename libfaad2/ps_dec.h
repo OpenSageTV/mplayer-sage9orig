@@ -22,7 +22,7 @@
 ** Commercial non-GPL licensing of this software is possible.
 ** For more info contact Ahead Software through Mpeg4AAClicense@nero.com.
 **
-** $Id: ps_dec.h,v 1.8 2004/09/04 14:56:28 menno Exp $
+** $Id: ps_dec.h,v 1.3 2006-06-14 13:39:13 Narflex Exp $
 **/
 
 #ifndef __PS_DEC_H__

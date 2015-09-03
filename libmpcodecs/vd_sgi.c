@@ -2,10 +2,10 @@
  * author: Todd Kirby <slapcat@pacbell.net>
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "config.h"
 #include "mp_msg.h"
 #include "libavutil/common.h"
 #include "mpbswap.h"

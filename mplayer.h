@@ -39,6 +39,10 @@ extern int force_ni;
 extern int index_mode;
 extern int autosync;
 
+extern int active_file;
+extern long circular_file_size;
+
+
 // libmpcodecs:
 extern int fullscreen;
 extern int flip;

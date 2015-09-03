@@ -1,5 +1,6 @@
 /* The name speaks for itself this filter is a dummy and will not blow
    up regardless of what you do with it. */
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

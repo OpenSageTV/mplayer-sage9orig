@@ -1,6 +1,6 @@
 /* vf_blackframe.c - detect frames that are (almost) black
  *
- * $Id$
+ * $Id: vf_blackframe.c,v 1.2 2007-08-22 15:49:41 Narflex Exp $
  *
  * search for black frames to detect scene transitions
  * (c) 2006 Julian Hall
@@ -25,11 +25,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "config.h"
 #include "mp_msg.h"
 
 #include "img_format.h"

@@ -1,3 +1,4 @@
+#include "config.h"
 //  Y4M file parser by Rik Snel (using yuv4mpeg*.[ch] from
 //  mjpeg.sourceforge.net) (derived from demux_viv.c)
 //  older YUV4MPEG (used by xawtv) support by Alex Beregszaszi

@@ -1,3 +1,4 @@
+#include "config.h"
 // SAMPLE audio decoder - you can use this file as template when creating new codec!
 
 #include <stdio.h>

@@ -62,7 +62,7 @@ static inline double bits2qp(RateControlEntry *rce, double bits){
     return rce->qscale * (double)(rce->i_tex_bits + rce->p_tex_bits+1)/ bits;
 }
 
-int ff_rate_control_init(MpegEncContext *s)
+int ff_rate_control_init(MpegEncContext *s, int old_bitrate)
 {
     RateControlContext *rcc= &s->rc_context;
     int i;
@@ -112,6 +112,10 @@ int ff_rate_control_init(MpegEncContext *s)
         return -1;
     }
 
+    rcc->last_frame_rc_reset = (old_bitrate ? s->picture_number : 0);
+    s->total_bits = 0;
+    if (!old_bitrate)
+    {
     for(i=0; i<5; i++){
         rcc->pred[i].coeff= FF_QP2LAMBDA * 7.0;
         rcc->pred[i].count= 1.0;
@@ -125,6 +129,7 @@ int ff_rate_control_init(MpegEncContext *s)
         rcc->last_qscale_for[i]=FF_QP2LAMBDA * 5;
     }
     rcc->buffer_index= s->avctx->rc_initial_buffer_occupancy;
+    }
 
     if(s->flags&CODEC_FLAG_PASS2){
         int i;
@@ -202,7 +207,7 @@ int ff_rate_control_init(MpegEncContext *s)
         rcc->pass1_wanted_bits=0.001;
 
         /* init stuff with the user specified complexity */
-        if(s->avctx->rc_initial_cplx){
+        if(!old_bitrate && s->avctx->rc_initial_cplx){
             for(i=0; i<60*30; i++){
                 double bits= s->avctx->rc_initial_cplx * (i/10000.0 + 1.0)*s->mb_num;
                 RateControlEntry rce;
@@ -241,6 +246,11 @@ int ff_rate_control_init(MpegEncContext *s)
                 q= get_qscale(s, &rce, rcc->pass1_wanted_bits/rcc->pass1_rc_eq_output_sum, i);
                 rcc->pass1_wanted_bits+= s->bit_rate/(1/av_q2d(s->avctx->time_base)); //FIXME missbehaves a little for variable fps
             }
+        }
+        else if (old_bitrate)
+        {
+	        rcc->pass1_wanted_bits *= ((double)old_bitrate)/s->bit_rate;
+	        rcc->pass1_rc_eq_output_sum *= ((double)old_bitrate)/s->bit_rate;
         }
 
     }
@@ -660,9 +670,9 @@ float ff_rate_estimate_qscale(MpegEncContext *s, int dry_run)
     double diff;
     double short_term_q;
     double fps;
-    int picture_number= s->picture_number;
     int64_t wanted_bits;
     RateControlContext *rcc= &s->rc_context;
+    int picture_number= s->picture_number - rcc->last_frame_rc_reset;
     AVCodecContext *a= s->avctx;
     RateControlEntry local_rce, *rce;
     double bits;

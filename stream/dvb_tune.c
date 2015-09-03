@@ -4,7 +4,7 @@
 
    Modified for use with MPlayer, for details see the changelog at
    http://svn.mplayerhq.hu/mplayer/trunk/
-   $Id: dvb_tune.c 21859 2007-01-09 20:02:13Z nicodvb $
+   $Id: dvb_tune.c,v 1.1 2007-04-10 20:11:30 Narflex Exp $
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License

@@ -1,3 +1,4 @@
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,8 +8,6 @@
 #include <unistd.h>
 #include <inttypes.h>
 #include <errno.h>
-
-#include "config.h"
 
 #ifdef HAVE_DVB_HEAD
 #define HAVE_DVB 1

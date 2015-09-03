@@ -1,3 +1,4 @@
+#include "config.h"
 /*
  * Copyright (C) 2001-2003 Michael Niedermayer <michaelni@gmx.at>
  *
@@ -59,7 +60,6 @@ untested special converters
 #include <math.h>
 #include <stdio.h>
 #include <unistd.h>
-#include "config.h"
 #include <assert.h>
 #ifdef HAVE_SYS_MMAN_H
 #include <sys/mman.h>

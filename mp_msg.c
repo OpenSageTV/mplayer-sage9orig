@@ -1,12 +1,12 @@
 
 //#define MSG_USE_COLORS
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
 
-#include "config.h"
 
 #ifdef USE_ICONV
 #include <iconv.h>

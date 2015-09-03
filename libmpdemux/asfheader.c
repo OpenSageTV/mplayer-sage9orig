@@ -1,11 +1,11 @@
 // .asf fileformat docs from http://divx.euro.ru
+#include "config.h"
 
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "config.h"
 #include "libavutil/common.h"
 #include "libavutil/intreadwrite.h"
 #include "mp_msg.h"

@@ -5,7 +5,7 @@
  *
  * Modified for use with MPlayer, detailed changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: module.c 21306 2006-11-27 02:44:06Z nplourde $
+ * $Id: module.c,v 1.4 2007-04-10 19:33:29 Narflex Exp $
  *
  */
 

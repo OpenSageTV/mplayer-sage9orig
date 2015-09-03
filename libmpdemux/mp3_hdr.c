@@ -1,6 +1,6 @@
+#include "config.h"
 #include <stdio.h>
 
-#include "config.h"
 #include "mp_msg.h"
 
 //----------------------- mp3 audio frame header parser -----------------------

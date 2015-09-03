@@ -13,13 +13,30 @@
 #undef stdin
 
 int mp_input_win32_slave_cmd_func(int fd,char* dest,int size){
-  DWORD retval;
+  DWORD retval, dw1, dw2;
+  int i;
   HANDLE stdin = GetStdHandle(STD_INPUT_HANDLE);
-  if(!PeekNamedPipe(stdin, NULL, size, &retval, NULL, NULL) || !retval){
+  if(!PeekNamedPipe(stdin, dest, size, &retval, &dw1, &dw2) || !retval){
 	  return MP_INPUT_NOTHING;
+  }
+  // Find the first \n and stop there so we don't miss any commands
+  for (i = 0; i < retval; i++)
+  {
+  	if (dest[i] == '\n')
+  	{
+  		retval = i + 1;
+  		break;
+  	}
   }
   if(retval>size)retval=size;
   ReadFile(stdin, dest, retval, &retval, NULL);
+  // MPlayer likes \n terminated lines instead of \r\n terminated
+  if (dest[retval - 2] == '\r')
+  {
+	  dest[retval - 2] = '\n';
+	  retval--;
+  }
+  dest[retval] = '\0';
   if(retval)return retval;
   return MP_INPUT_NOTHING;
 }

@@ -238,10 +238,28 @@ static int shorten_read_header(AVFormatContext *s,
     return 0;
 }
 
+/* flac probe */
+static int flac_read_probe(AVProbeData *p)
+{
+	char *lastDot;
+	if (p->buf_size < 4)
+		return 0;
+	if (p->buf[0] == 'f' && p->buf[1] == 'L' && p->buf[2] == 'a' && p->buf[3] == 'C')
+		return AVPROBE_SCORE_MAX;
+
+	// There could be an ID3 header, so check the file extension as well
+	lastDot = strrchr(p->filename, '.');
+	if (lastDot && !strcasecmp(lastDot, ".flac"))
+		return AVPROBE_SCORE_MAX/2;
+	return 0;
+}
+
 /* flac read */
 static int flac_read_header(AVFormatContext *s,
                             AVFormatParameters *ap)
 {
+	int sampleRate,postHeaderPos,firstTag;
+	int64_t numSamples;
     AVStream *st;
 
     st = av_new_stream(s, 0);
@@ -251,6 +269,95 @@ static int flac_read_header(AVFormatContext *s,
     st->codec->codec_id = CODEC_ID_FLAC;
     st->need_parsing = 1;
     /* the parameters will be extracted from the compressed bitstream */
+	// But we want to get the duration here since in the bitstream duration doesn't mean anything!!
+
+	// Check for an ID3 tag and skip it if it's there.
+	postHeaderPos = 0;
+	firstTag = get_le32(&s->pb);
+	if ((firstTag & 0xFF) == 'I' && ((firstTag >> 8) & 0xFF) == 'D' &&
+		((firstTag >> 16) & 0xFF) == '3')
+	{
+		int footerPresent, mp3headerSize;
+		get_byte(&s->pb);
+		footerPresent = (get_byte(&s->pb) & 0x10) == 0x10;
+		mp3headerSize = get_byte(&s->pb) << 21;
+		mp3headerSize = mp3headerSize | (get_byte(&s->pb) << 14);
+		mp3headerSize = mp3headerSize | (get_byte(&s->pb) << 7);
+		mp3headerSize = mp3headerSize | get_byte(&s->pb);
+		mp3headerSize += (footerPresent ? 10 : 0);
+		if (mp3headerSize > 0)
+		{
+			url_fskip(&s->pb, mp3headerSize);
+			postHeaderPos = mp3headerSize + 10;
+		}
+		firstTag = get_le32(&s->pb);
+	}
+    if (firstTag != MKTAG('f', 'L', 'a', 'C'))
+        return AVERROR_IO; // FIXME
+
+	// The first block is always the STREAMINFO header which has the sample rate and the total number
+	// of samples in it. That's how we calculate the duration.
+    url_fskip(&s->pb, 14);// 1 + 3 + 2 + 2 + 3 + 3
+
+    sampleRate = (get_be16(&s->pb) << 4) | ((get_byte(&s->pb) & 0xF0) >> 4);
+	numSamples = (((int64_t)(get_byte(&s->pb) & 0xF)) << 32) | get_be32(&s->pb);
+	st->duration = av_rescale_q(numSamples, (AVRational){1, sampleRate}, st->time_base);
+	st->start_time = 0;
+    //av_log(NULL, AV_LOG_DEBUG, "FLAC Header: sampleRate=%d, duration=%f\n", sampleRate, (st->duration*1.0f)/AV_TIME_BASE);
+
+	// Now check for any other tags if we're looking for metadata
+	if (ap->dump_metadata)
+	{
+		int blockType;
+		url_fskip(&s->pb, 16); // MD5sum
+		do
+		{
+			int blockLen;
+			blockType = get_byte(&s->pb);
+			blockLen = get_be24(&s->pb);
+			if ((blockType & 0x7F) == 4) // Vorbis comment
+			{
+				int numComments,i;
+				int venLen = get_le32(&s->pb);
+				url_fskip(&s->pb, venLen);
+				numComments = get_le32(&s->pb);
+				for (i = 0; i < numComments; i++)
+				{
+					int commentLen = get_le32(&s->pb);
+					char* comment = (char*)av_mallocz(commentLen + 1);
+					int j;
+					for (j = 0; j < commentLen; j++)
+					{
+						comment[j] = get_byte(&s->pb);
+					}
+					av_log(NULL, AV_LOG_INFO, "META:%s\r\n", comment);
+					av_free(comment);
+				}
+			}
+			else if ((blockType & 0x7F) == 6) // picture
+			{
+				int mimeLen,descLen,picLen;
+				get_le32(&s->pb); // Skip picture type
+				mimeLen = get_be32(&s->pb);
+				url_fskip(&s->pb, mimeLen);
+				descLen = get_be32(&s->pb);
+				url_fskip(&s->pb, descLen);
+				get_be32(&s->pb); // width
+				get_be32(&s->pb); // height
+				get_be32(&s->pb); // depth
+				get_be32(&s->pb); // palette size
+				picLen = get_be32(&s->pb); // height
+				av_log(NULL, AV_LOG_INFO, "META:ThumbnailSize=%d\r\n", picLen);
+				av_log(NULL, AV_LOG_INFO, "META:ThumbnailOffset=%d\r\n", (int) url_ftell(&s->pb));
+				url_fskip(&s->pb, picLen);
+			}
+			else
+				url_fskip(&s->pb, blockLen);
+		}while ((blockType & 0x80) != 0x80);
+		
+	}
+	url_fseek(&s->pb, postHeaderPos, SEEK_SET);
+	
     return 0;
 }
 
@@ -454,7 +561,7 @@ AVInputFormat flac_demuxer = {
     "flac",
     "raw flac",
     0,
-    NULL,
+    flac_read_probe,
     flac_read_header,
     raw_read_partial_packet,
     raw_read_close,

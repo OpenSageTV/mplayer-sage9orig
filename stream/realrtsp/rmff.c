@@ -1,3 +1,4 @@
+#include "config.h"
 /*
  * This file was ported to MPlayer from xine CVS rmff.c,v 1.3 2002/12/24 01:30:22
  */

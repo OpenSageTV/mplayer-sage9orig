@@ -91,6 +91,21 @@ void *av_malloc(unsigned int size)
     return ptr;
 }
 
+#ifdef EM8622UNCACHED
+
+typedef void* mspace;
+extern mspace create_mspace_with_base(void* base, size_t capacity, int locked);
+extern void* mspace_malloc(mspace msp, size_t bytes);
+extern void mspace_free(mspace msp, void* mem);
+extern size_t mspace_footprint(mspace msp);
+extern void* mspace_memalign(mspace msp, size_t alignment, size_t bytes);
+
+static unsigned int uncachedmembuf = 0;
+static mspace uncachedmem = NULL;
+#undef fprintf
+#undef fflush
+#endif
+
 void *av_realloc(void *ptr, unsigned int size)
 {
 #ifdef CONFIG_MEMALIGN_HACK
@@ -100,20 +115,71 @@ void *av_realloc(void *ptr, unsigned int size)
     /* let's disallow possible ambiguous cases */
     if(size > (INT_MAX-16) )
         return NULL;
-
+#ifdef EM8622UNCACHED
+    if (ptr && ((unsigned int)ptr)>= uncachedmembuf && ((unsigned int)ptr) < (uncachedmembuf+4*1024*1024))
+    {
+        fprintf(stderr, "realloc in uncached? %X\n",(unsigned int)ptr);
+        return NULL;
+    }
+#endif
 #ifdef CONFIG_MEMALIGN_HACK
     //FIXME this isn't aligned correctly, though it probably isn't needed
     if(!ptr) return av_malloc(size);
     diff= ((char*)ptr)[-1];
-    return realloc(ptr - diff, size + diff) + diff;
+    ptr = realloc(ptr - diff, size + diff) + diff;
 #else
-    return realloc(ptr, size);
+    ptr = realloc(ptr, size);
 #endif
+    return ptr;
 }
+
+
+#ifdef EM8622UNCACHED
+
+static mspace initUncached(int size)
+{
+    void *buffer = av_malloc(size);
+    mspace m1;
+    unsigned char *tmpbuf = av_malloc(16384);
+    int i;
+    fprintf(stderr, "Creating mspace at %X\n",(unsigned int)buffer);
+    buffer = (void *) (((unsigned int)buffer)&0x7FFFFFFF);
+    // Clean cache
+    for(i=0;i<16384;i++) tmpbuf[i]=i;
+    uncachedmembuf = (unsigned int)buffer;
+    m1 = create_mspace_with_base(buffer, size, 0);
+    av_free(tmpbuf);
+    return m1;
+}
+
+void *av_mallocUncached(unsigned int size)
+{
+    static int initialized=0;
+    void *outptr;
+    if(!initialized)
+    {
+        uncachedmem = initUncached(4*1024*1024);
+        initialized=1;
+    }
+    outptr = mspace_memalign(uncachedmem, 16, size);
+//    fprintf(stderr, "Allocating %d bytes uncached ret %X\n", size, (unsigned int)outptr);
+    return outptr;
+}
+
+#endif
+
 
 void av_free(void *ptr)
 {
     /* XXX: this test should not be needed on most libcs */
+#ifdef EM8622UNCACHED
+    if (ptr && ((unsigned int)ptr)>= uncachedmembuf && ((unsigned int)ptr) < (uncachedmembuf+4*1024*1024))
+    {
+//        fprintf(stderr, "Freeing %X\n", (unsigned int)ptr);
+        mspace_free(uncachedmem, ptr);
+        return;
+    }
+#endif
     if (ptr)
 #ifdef CONFIG_MEMALIGN_HACK
         free(ptr - ((char*)ptr)[-1]);
@@ -150,3 +216,42 @@ char *av_strdup(const char *s)
     return ptr;
 }
 
+
+#ifdef EM8622UNCACHED
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#endif
+
+// We implement this to use kernel copy
+void *av_memcpy(void *dest, const void *src, unsigned int size)
+{
+#ifdef EM8622UNCACHED
+    static int devmemfd=-1;
+    static unsigned long long bytescopied=0;
+
+    if(devmemfd<0)
+    {
+        devmemfd=open("/dev/mem",O_RDWR);
+    }
+    #undef fprintf
+   /* fprintf(stderr, "av_memcpy: pread %X %X %X\n",(unsigned int)dest, (unsigned int)src, size);
+    fflush(stderr);
+    usleep(1000);*/
+    if(((((unsigned int)dest)|((unsigned int)src))&0x80000000)==0 && size > 256)
+    {
+        lseek(devmemfd, ((unsigned int)src), SEEK_SET);
+        if(read(devmemfd, dest, size)!=size)
+        {
+            fprintf(stderr, "av_memcpy: pread %X %X %X failed\n",(unsigned int)dest, (unsigned int)src, size);
+        }
+        bytescopied+=size;
+        return dest;
+    }
+    else
+#endif
+    {
+        return memcpy(dest,src,size);
+    }
+}

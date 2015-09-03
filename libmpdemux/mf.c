@@ -1,3 +1,4 @@
+#include "config.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -9,7 +10,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "config.h"
 
 #ifdef HAVE_GLOB
 #include <glob.h>

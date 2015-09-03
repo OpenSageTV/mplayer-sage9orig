@@ -4,7 +4,7 @@
  * (C) 2001, MPlayer team.
  *
  */
-
+#include "config.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>

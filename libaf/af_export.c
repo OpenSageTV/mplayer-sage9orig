@@ -1,3 +1,4 @@
+#include "config.h"
 /* This audio filter exports the incomming signal to other processes
    using memory mapping. Memory mapped area contains a header: 
       int nch, 
@@ -12,7 +13,6 @@
 #include <string.h>
 #include <inttypes.h>
 #include <unistd.h>
-#include "config.h"
 
 #include <sys/types.h>
 #include <sys/mman.h>

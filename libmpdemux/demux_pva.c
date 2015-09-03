@@ -18,11 +18,11 @@
 #define DEMUX_PVA_MULTIDEC_HACK
 #define PVA_NEW_PREBYTES_CODE
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "config.h"
 #include "mp_msg.h"
 #include "help_mp.h"
 

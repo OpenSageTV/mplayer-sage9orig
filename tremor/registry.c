@@ -1,3 +1,4 @@
+#include "config.h"
 /********************************************************************
  *                                                                  *
  * THIS FILE IS PART OF THE OggVorbis 'TREMOR' CODEC SOURCE CODE.   *

@@ -26,8 +26,8 @@
  * the C code (not assembly, mmx, ...) of this file can be used
  * under the LGPL license too
  */
-#include <inttypes.h>
 #include "config.h"
+#include <inttypes.h>
 #include "rgb2rgb.h"
 #include "swscale.h"
 #include "swscale_internal.h"

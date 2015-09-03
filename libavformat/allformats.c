@@ -163,6 +163,7 @@ void av_register_all(void)
     /* file protocols */
     register_protocol(&file_protocol);
     register_protocol(&pipe_protocol);
+	register_protocol(&stv_protocol);
 #ifdef CONFIG_NETWORK
     register_protocol(&udp_protocol);
     register_protocol(&rtp_protocol);

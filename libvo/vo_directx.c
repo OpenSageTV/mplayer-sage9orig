@@ -18,13 +18,13 @@
  *
  *****************************************************************************/
 
+#include "config.h"
 #include <windows.h>
 #include <windowsx.h>
 #include <ddraw.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#include "config.h"
 #include "video_out.h"
 #include "video_out_internal.h"
 #include "fastmemcpy.h"
@@ -60,6 +60,10 @@ static DDSURFACEDESC2		ddsdsf;                 //surface descripiton needed for 
 static HINSTANCE            hddraw_dll;             //handle to ddraw.dll
 static RECT                 rd;                     //rect of our stretched image
 static RECT                 rs;                     //rect of our source image
+static RECT                 forcedRD;                     //rect of our stretched image, as forced by slave mode
+static RECT                 forcedRS;                     //rect of our source image, as forced by slave mode
+static RECT					lastRect;				// last client rectangle of window to optimize display updates
+static POINT				lastPt;					// last screen position of the window to optimize display updates
 static HWND                 hWnd=NULL;              //handle to the window
 static HWND                 hWndFS=NULL;           //fullscreen window
 static HBRUSH               colorbrush = NULL;      // Handle to colorkey brush
@@ -77,12 +81,14 @@ static uint32_t vm_bpp=0;
 static uint32_t dstride;                            //surface stride
 static uint32_t nooverlay = 0;                      //NonOverlay mode
 static DWORD    destcolorkey;                       //colorkey for our surface
+static DWORD	forcedColorKey = 0;
 static COLORREF windowcolor = RGB(0,0,16);          //windowcolor == colorkey
 static int adapter_count=0;
 static GUID selected_guid;
 static GUID *selected_guid_ptr = NULL;
 static RECT monitor_rect;	                        //monitor coordinates 
 static float window_aspect;
+static BOOL reloadingDDraw = 0;
 static BOOL (WINAPI* myGetMonitorInfo)(HMONITOR, LPMONITORINFO) = NULL;
 static RECT last_rect = {0xDEADC0DE, 0xDEADC0DE, 0xDEADC0DE, 0xDEADC0DE};
 
@@ -390,7 +396,33 @@ static BOOL WINAPI EnumCallbackEx(GUID FAR *lpGUID, LPSTR lpDriverDescription, L
         mp_msg(MSGT_VO, MSGL_INFO ,"%s", lpDriverDescription);
     }
     
-    if(adapter_count == vo_adapter_num){
+	if (vo_adapter_num == 0 && WinID > 0)
+	{
+		// Find the monitor based off our target window coordinates
+		RECT tempRect;
+	    GetWindowRect((HWND)WinID, &tempRect);
+        MONITORINFO mi;
+        mi.cbSize = sizeof(mi);
+
+        if (myGetMonitorInfo(hm, &mi)) {
+			if (mi.rcMonitor.left < (tempRect.left + tempRect.right)/2 &&
+				mi.rcMonitor.right > (tempRect.left + tempRect.right)/2 &&
+				mi.rcMonitor.top < (tempRect.top + tempRect.bottom)/2 &&
+				mi.rcMonitor.bottom > (tempRect.top + tempRect.bottom)/2)
+			{
+				if (!lpGUID)
+					selected_guid_ptr = NULL;
+				else
+				{
+					selected_guid = *lpGUID;
+					selected_guid_ptr = &selected_guid;
+				}
+				monitor_rect = mi.rcMonitor;
+		        mp_msg(MSGT_VO, MSGL_INFO ,"\t\t<--");
+			}
+        }
+	}
+    else if(adapter_count == vo_adapter_num){
         MONITORINFO mi;
         if (!lpGUID)
             selected_guid_ptr = NULL;
@@ -421,7 +453,6 @@ static uint32_t Directx_InitDirectDraw()
 	LPDIRECTDRAWENUMERATEEX OurDirectDrawEnumerateEx;
 	HINSTANCE user32dll=LoadLibrary("user32.dll");
 	
-	adapter_count = 0;
 	if(user32dll){
 		myGetMonitorInfo=GetProcAddress(user32dll,"GetMonitorInfoA");
 		if(!myGetMonitorInfo && vo_adapter_num){
@@ -440,9 +471,7 @@ static uint32_t Directx_InitDirectDraw()
 		return 1;
     }
 	
-    last_rect.left = 0xDEADC0DE;   // reset window position cache
-
-	if(vo_adapter_num){ //display other than default
+	if(vo_adapter_num || WinID > 0){ //display other than default
         OurDirectDrawEnumerateEx = (LPDIRECTDRAWENUMERATEEX) GetProcAddress(hddraw_dll,"DirectDrawEnumerateExA");
         if (!OurDirectDrawEnumerateEx){
             FreeLibrary( hddraw_dll );
@@ -453,6 +482,7 @@ static uint32_t Directx_InitDirectDraw()
         }
 
         // enumerate all display devices attached to the desktop
+		adapter_count = 0;
         OurDirectDrawEnumerateEx(EnumCallbackEx, NULL, DDENUM_ATTACHEDSECONDARYDEVICES );
 
         if(vo_adapter_num >= adapter_count)
@@ -538,17 +568,7 @@ static uint32_t Directx_ManageDisplay()
     DDOVERLAYFX     ovfx;
     DWORD           dwUpdateFlags=0;
     int width,height;
-   
-    if(!vidmode && !vo_fs && WinID!=-1) {
-      RECT current_rect = {0, 0, 0, 0};
-      GetWindowRect(hWnd, &current_rect);
-      if ((current_rect.left   == last_rect.left)
-      &&  (current_rect.top    == last_rect.top)
-      &&  (current_rect.right  == last_rect.right)
-      &&  (current_rect.bottom == last_rect.bottom))
-        return 0;
-      last_rect = current_rect;
-    }
+	BOOL forcedRects = forcedRS.right != 0;
 
     if(vo_fs || vidmode){
       aspect(&width,&height,A_ZOOM);
@@ -573,15 +593,47 @@ static uint32_t Directx_ManageDisplay()
       pt.x = 0;  //overlayposition relative to the window
       pt.y = 0;
       ClientToScreen(hWnd,&pt);  
+	  RECT currRect;
+	  if (WinID != -1)
+	  {
+	      GetWindowRect(hWnd, &currRect);
+		  pt.x = currRect.left;
+		  pt.y = currRect.top;
+	  }
+	  else
+		  GetClientRect(hWnd, &currRect);
+
+	  if (currRect.left == lastRect.left && currRect.top == lastRect.top && 
+		  currRect.right == lastRect.right && currRect.bottom == lastRect.bottom &&
+		  lastPt.x == pt.x && lastPt.y == pt.y)
+		  return 0; // no need to update
+	  if (WinID != -1)
+		  GetWindowRect(hWnd, &lastRect);
+	  else
+		  GetClientRect(hWnd, &currRect);
+	  lastPt.x = pt.x;
+	  lastPt.y = pt.y;
+	  pt.x -= monitor_rect.left;    /* move coordinates from global to local monitor space */
+	  pt.y -= monitor_rect.top;
+	  if (forcedRects)
+	  {
+		  width = forcedRD.right - forcedRD.left;
+		  height = forcedRD.bottom - forcedRD.top;
+		  rd.right = pt.x + width + forcedRD.left;
+		  rd.bottom = pt.y + height + forcedRD.top;
+		  rd.left = pt.x + forcedRD.left;
+		  rd.top = pt.y + forcedRD.top;
+	  }
+	  else
+	  {
       GetClientRect(hWnd, &rd);
 	  width=rd.right - rd.left;
 	  height=rd.bottom - rd.top;
-      pt.x -= monitor_rect.left;    /* move coordinates from global to local monitor space */
-      pt.y -= monitor_rect.top;
       rd.right -= monitor_rect.left;
       rd.bottom -= monitor_rect.top;
 	  rd.left = pt.x;
       rd.top = pt.y; 
+	  }
       if(!nooverlay && (!width || !height)){
 	    /*window is minimized*/
 	    ddrval = g_lpddsOverlay->lpVtbl->UpdateOverlay(g_lpddsOverlay,NULL, g_lpddsPrimary, NULL, DDOVER_HIDE, NULL);
@@ -605,8 +657,8 @@ static uint32_t Directx_ManageDisplay()
 	/*ok, let's workaround some overlay limitations*/
 	if(!nooverlay)
 	{
-		uint32_t        uStretchFactor1000;  //minimum stretch 
-        uint32_t        xstretch1000,ystretch1000; 
+		int32_t        uStretchFactor1000;  //minimum stretch 
+        int32_t        xstretch1000,ystretch1000; 
 		/*get driver capabilities*/
         ZeroMemory(&capsDrv, sizeof(capsDrv));
         capsDrv.dwSize = sizeof(capsDrv);
@@ -618,10 +670,20 @@ static uint32_t Directx_ManageDisplay()
         /*calculate xstretch1000 and ystretch1000*/
         xstretch1000 = ((rd.right - rd.left)* 1000)/image_width ;
         ystretch1000 = ((rd.bottom - rd.top)* 1000)/image_height;
+		if (forcedRects)
+		{
+			rs.left = forcedRS.left;
+			rs.right = forcedRS.right;
+			rs.top = forcedRS.top;
+			rs.bottom = forcedRS.bottom;
+		}
+		else
+		{
 		rs.left=0;
 		rs.right=image_width;
 		rs.top=0;
 		rs.bottom=image_height;
+		}
         if(rd.left < 0)rs.left=(-rd.left*1000)/xstretch1000;
         if(rd.top < 0)rs.top=(-rd.top*1000)/ystretch1000;
         if(rd.right > vo_screenwidth)rs.right=((vo_screenwidth-rd.left)*1000)/xstretch1000;
@@ -672,6 +734,8 @@ static uint32_t Directx_ManageDisplay()
 		}
 		else
 		{
+			if (forcedColorKey)
+				destcolorkey = forcedColorKey;
 			ovfx.dckDestColorkey.dwColorSpaceLowValue = destcolorkey; 
             ovfx.dckDestColorkey.dwColorSpaceHighValue = destcolorkey;
 		}
@@ -710,7 +774,20 @@ static uint32_t Directx_ManageDisplay()
   	/*for nonoverlay mode we are finished, for overlay mode we have to display the overlay first*/
 	if(nooverlay)return 0;
 	
-//    printf("overlay: %i %i %ix%i\n",rd.left,rd.top,rd.right - rd.left,rd.bottom - rd.top);
+	if (rd.right - rd.left < 0 && !reloadingDDraw && WinID != -1)
+	{
+		// The window is off the screen and maybe on another monitor
+		reloadingDDraw = 1;
+		printf("OFF THE SCREEN!!!!\r\n");
+		uninit();
+	    if (WinID != -1) hWnd = WinID;
+		Directx_InitDirectDraw();
+		config(image_width, image_height, d_image_width, d_image_height, vo_fs ? 0x01 : 0, 0, image_format);
+		int rv = Directx_ManageDisplay();
+		reloadingDDraw = 0;
+		return rv;
+	}
+
 	ddrval = g_lpddsOverlay->lpVtbl->UpdateOverlay(g_lpddsOverlay,&rs, g_lpddsPrimary, &rd, dwUpdateFlags, &ovfx);
     if(FAILED(ddrval))
     {
@@ -1063,6 +1140,11 @@ static int preinit(const char *arg)
 			mp_msg(MSGT_VO,MSGL_V,"<vo_directx><INFO>disabled overlay\n");
 		    nooverlay = 1;
 		}
+		if (strstr(arg, "colorkey"))
+		{
+			forcedColorKey = atoi(strstr(arg, "colorkey") + 9);
+			mp_msg(MSGT_VO, MSGL_V, "<vo_directx><INFO>colorkey=%d\n", forcedColorKey);
+		}
 	}
 	/*load icon from the main app*/
     if(GetModuleFileName(NULL,exedir,MAX_PATH))
@@ -1099,7 +1181,7 @@ static int preinit(const char *arg)
 	
 	if (Directx_InitDirectDraw()!= 0)return 1;          //init DirectDraw
 	
-    if(!vidmode)hWndFS = CreateWindow(WNDCLASSNAME_FULLSCREEN,"MPlayer Fullscreen",WS_POPUP,monitor_rect.left,monitor_rect.top,monitor_rect.right-monitor_rect.left,monitor_rect.bottom-monitor_rect.top,hWnd,NULL,hInstance,NULL);			
+//    if(!vidmode)hWndFS = CreateWindow(WNDCLASSNAME_FULLSCREEN,"MPlayer Fullscreen",WS_POPUP,monitor_rect.left,monitor_rect.top,monitor_rect.right-monitor_rect.left,monitor_rect.bottom-monitor_rect.top,hWnd,NULL,hInstance,NULL);			
     mp_msg(MSGT_VO, MSGL_DBG3 ,"<vo_directx><INFO>initial mplayer windows created\n");
     
     if (Directx_CheckPrimaryPixelformat()!=0)return 1;
@@ -1285,6 +1367,8 @@ config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_height, uin
         guiGetEvent(guiSetShVideo, 0);
     }
 #endif
+	BOOL hadSurfs = g_lpddsPrimary != NULL || g_lpddsOverlay != NULL;
+
     /*release all directx objects*/
     if (g_cc != NULL)g_cc->lpVtbl->Release(g_cc);
     g_cc=NULL;
@@ -1320,9 +1404,12 @@ config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_height, uin
     else ShowWindow(hWnd,SW_SHOW); 
      
     if(vo_fs && !vidmode)ShowWindow(hWndFS,SW_SHOW);   
-	if (WinID == -1)
+	if (WinID == -1 && title)
 	SetWindowText(hWnd,title);
     
+	if (!reloadingDDraw && !hadSurfs)
+		forcedRS.right = forcedRS.bottom = forcedRD.right = forcedRD.bottom = 0;
+	lastRect.right = lastRect.bottom = -1; // forces a display update if this is just an AR reconfig
     
     if(vidmode)vo_fs=0;    
 
@@ -1373,6 +1460,8 @@ config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_height, uin
 		if(DD_OK != g_lpddsOverlay->lpVtbl->QueryInterface(g_lpddsOverlay,&IID_IDirectDrawColorControl,(void**)&g_cc))
 			mp_msg(MSGT_VO, MSGL_V,"<vo_directx><WARN>unable to get DirectDraw ColorControl interface\n");
 	}
+	// If we're embedding the window we don't want to update the overlay until the window has its first frame rendered.
+	if (WinID == -1)
 	Directx_ManageDisplay();
 	memset(&ddsdsf, 0,sizeof(DDSURFACEDESC2));
 	ddsdsf.dwSize = sizeof (DDSURFACEDESC2);
@@ -1464,7 +1553,6 @@ static int control(uint32_t request, void *data, ...)
 	case VOCTRL_GET_IMAGE:
       	return get_image(data);
     case VOCTRL_QUERY_FORMAT:
-        last_rect.left = 0xDEADC0DE;   // reset window position cache
         return query_format(*((uint32_t*)data));
 	case VOCTRL_DRAW_IMAGE:
         return put_image(data);
@@ -1489,7 +1577,6 @@ static int control(uint32_t request, void *data, ...)
 					ShowWindow(hWnd,SW_HIDE);
 					ShowWindow(hWnd,SW_SHOW);
 				}
-				last_rect.left = 0xDEADC0DE;   // reset window position cache
 				Directx_ManageDisplay();
 			}
 		return VO_TRUE;
@@ -1503,7 +1590,6 @@ static int control(uint32_t request, void *data, ...)
 			{
 				if(vo_ontop) vo_ontop = 0;
 				else vo_ontop = 1;
-				last_rect.left = 0xDEADC0DE;   // reset window position cache
 				Directx_ManageDisplay();
 			}
 		return VO_TRUE;
@@ -1517,7 +1603,6 @@ static int control(uint32_t request, void *data, ...)
 			{
 				if(vo_rootwin) vo_rootwin = 0;
 				else vo_rootwin = 1;
-				last_rect.left = 0xDEADC0DE;   // reset window position cache
 				Directx_ManageDisplay();
 			}
 		return VO_TRUE;
@@ -1542,7 +1627,6 @@ static int control(uint32_t request, void *data, ...)
 					ShowWindow(hWndFS,SW_HIDE);
 					ShowWindow(hWnd,SW_SHOW);
 				}  
-	      			last_rect.left = 0xDEADC0DE;   // reset window position cache
 				Directx_ManageDisplay();
                 break;				
 			}
@@ -1576,6 +1660,24 @@ static int control(uint32_t request, void *data, ...)
         }
         aspect_save_screenres(vo_screenwidth, vo_screenheight);
         return VO_TRUE;
+	case VOCTRL_RECTANGLES: {
+		int* rectInfo = (int*) data;
+		printf("sx=%d sy=%d sw=%d sh=%d dx=%d dy=%d dw=%d dh=%d\r\n", rectInfo[0],rectInfo[1],rectInfo[2],rectInfo[3],rectInfo[4],rectInfo[5],rectInfo[6],rectInfo[7]);
+		if (forcedRS.left != rectInfo[0] || forcedRS.top != rectInfo[1] || forcedRS.right != (rectInfo[0] + rectInfo[2]) || forcedRS.bottom != (rectInfo[1] + rectInfo[3]) ||
+			forcedRD.left != rectInfo[4] || forcedRD.top != rectInfo[5] || forcedRD.right != (rectInfo[4] + rectInfo[6]) || forcedRD.bottom != (rectInfo[5] + rectInfo[7]))
+		{
+			forcedRS.left = rectInfo[0];
+			forcedRS.top = rectInfo[1];
+			forcedRS.right = rectInfo[0] + rectInfo[2];
+			forcedRS.bottom = rectInfo[1] + rectInfo[3];
+			forcedRD.left = rectInfo[4];
+			forcedRD.top = rectInfo[5];
+			forcedRD.right = rectInfo[4] + rectInfo[6];
+			forcedRD.bottom = rectInfo[5] + rectInfo[7];
+			lastRect.right = lastRect.bottom = -1; // forces a display update
+		}
+		return VO_TRUE;
+	}
     case VOCTRL_RESET:
         last_rect.left = 0xDEADC0DE;   // reset window position cache
         // fall-through intended

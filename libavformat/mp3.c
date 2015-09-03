@@ -246,40 +246,51 @@ static void id3_create_tag(AVFormatContext *s, uint8_t *buf)
 
 static int mp3_read_probe(AVProbeData *p)
 {
-    int max_frames, first_frames;
-    int fsize, frames, sample_rate;
-    uint32_t header;
-    uint8_t *buf, *buf2, *end;
-    AVCodecContext avctx;
+    int d, isMP3Extension, testOffset;
+    char *lastDot;
+    if(p->buf_size < 4)
+          return 0;
+  
+	// There may be junk at the beginning of the file for an MP3. So check the filename and
+	// if it's mp3 or MP3 then check the buffer for the sync byte
+	lastDot = strrchr(p->filename, '.');
+	isMP3Extension = 0;
+	if (lastDot && !strcasecmp(lastDot, ".mp3"))
+		isMP3Extension = 1;
+  
+	testOffset = 0;
+	while ((isMP3Extension && testOffset + 2 < p->buf_size) || testOffset == 0)
+	{
+		if(p->buf[testOffset] != 0xff)
+		{
+			testOffset++;
+			continue;
+          }
 
-    if(p->buf_size < ID3_HEADER_SIZE)
-        return 0;
+		d = p->buf[testOffset + 1];
+		if((d & 0xe0) != 0xe0 || ((d & 0x18) == 0x08 || (d & 0x06) == 0))
+		{
+			testOffset++;
+			continue;
+		}
 
-    if(id3_match(p->buf))
-        return AVPROBE_SCORE_MAX/2+1; // this must be less then mpeg-ps because some retards put id3 tage before mpeg-ps files
+		d = p->buf[testOffset + 2];
+		if((d & 0xf0) == 0xf0 || (d & 0x0c) == 0x0c)
+		{
+			testOffset++;
+			continue;
+      }
 
-    max_frames = 0;
-    buf = p->buf;
-    end = buf + FFMIN(4096, p->buf_size - sizeof(uint32_t));
+		return (testOffset ? AVPROBE_SCORE_MAX*3/4 : AVPROBE_SCORE_MAX);
+	}
 
-    for(; buf < end; buf++) {
-        buf2 = buf;
+	// It's naive to assume the presence of an ID3 tag indicates an MP3 file. They 
+	// can be on other file formats as well.
+    if(p->buf[0] == 'I' && p->buf[1] == 'D' && p->buf[2] == '3' &&
+       p->buf[3] < 5)
+	   return isMP3Extension ? 3*AVPROBE_SCORE_MAX/5 : AVPROBE_SCORE_MAX/4;
 
-        for(frames = 0; buf2 < end; frames++) {
-            header = (buf2[0] << 24) | (buf2[1] << 16) | (buf2[2] << 8) | buf2[3];
-            fsize = mpa_decode_header(&avctx, header, &sample_rate);
-            if(fsize < 0)
-                break;
-            buf2 += fsize;
-        }
-        max_frames = FFMAX(max_frames, frames);
-        if(buf == p->buf)
-            first_frames= frames;
-    }
-    if   (first_frames>=3) return AVPROBE_SCORE_MAX/2+1;
-    else if(max_frames>=3) return AVPROBE_SCORE_MAX/4;
-    else if(max_frames>=1) return 1;
-    else                   return 0;
+	return isMP3Extension ? AVPROBE_SCORE_MAX/2 : 0;
 }
 
 static int mp3_read_header(AVFormatContext *s,

@@ -9,6 +9,7 @@
 				to add support for audio, and bktr *BSD support.
 
 */
+#include "config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,7 +18,6 @@
 #include <ctype.h>
 #include <sys/time.h>
 
-#include "config.h"
 
 int tv_param_on = 0;
 

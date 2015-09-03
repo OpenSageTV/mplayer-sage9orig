@@ -28,6 +28,8 @@
 
 //#define DEBUG
 //#define DEBUG_SEEK
+#define EM8622DEBUG
+//#define DEBUGAVIDEMUX
 
 typedef struct AVIStream {
     int64_t frame_offset; /* current frame (video) or byte (audio) counter
@@ -43,6 +45,9 @@ typedef struct AVIStream {
 
     int prefix;                       ///< normally 'd'<<8 + 'c' or 'w'<<8 + 'b'
     int prefix_count;
+#ifdef EM8622
+    int64_t INDXoffset;
+#endif
 } AVIStream;
 
 typedef struct {
@@ -106,6 +111,12 @@ static int read_braindead_odml_indx(AVFormatContext *s, int frame_num){
     int i;
     int64_t last_pos= -1;
     int64_t filesize= url_fsize(&s->pb);
+#ifdef EM8622
+    int j,k=0;
+    int64_t nextpos=0;
+    AVStream *st2=NULL;
+    AVIStream *ast2=NULL;
+#endif
 
 #ifdef DEBUG_SEEK
     av_log(s, AV_LOG_ERROR, "longs_pre_entry:%d index_type:%d entries_in_use:%d chunk_id:%X base:%16"PRIX64"\n",
@@ -127,6 +138,10 @@ static int read_braindead_odml_indx(AVFormatContext *s, int frame_num){
     if(index_type>1)
         return -1;
 
+#ifdef EM8622DEBUG
+    av_log(s, AV_LOG_ERROR, "Starting to parse ODML index\n");
+#endif
+
     if(filesize > 0 && base >= filesize){
         av_log(s, AV_LOG_ERROR, "ODML index invalid\n");
         if(base>>32 == (base & 0xFFFFFFFF) && (base & 0xFFFFFFFF) < filesize && filesize <= 0xFFFFFFFF)
@@ -134,6 +149,34 @@ static int read_braindead_odml_indx(AVFormatContext *s, int frame_num){
         else
             return -1;
     }
+
+#ifdef EM8622
+    // Find position of last data from this stream
+    {
+        nextpos=0;
+        if(st->nb_index_entries>=1)
+            nextpos = st->index_entries[st->nb_index_entries-1].pos;
+    }
+    // Find position of video keyframe after this pos
+    for(j=0;j<s->nb_streams;j++)
+    {
+        st2= s->streams[j];
+        ast2 = st->priv_data;
+        if(st2->codec->codec_type == CODEC_TYPE_VIDEO)
+        {
+            for(k=0;k<st2->nb_index_entries;k++)
+            {
+                if(st2->index_entries[k].pos>nextpos)
+                {
+                    nextpos=st2->index_entries[k].pos;
+                    break;
+                }
+            }
+            break;
+        }
+    }
+    av_log(s, AV_LOG_ERROR, "nextpos k=%d %lld\n", k, nextpos);
+#endif
 
     for(i=0; i<entries_in_use; i++){
         if(index_type){
@@ -148,8 +191,38 @@ static int read_braindead_odml_indx(AVFormatContext *s, int frame_num){
             if(last_pos == pos || pos == base - 8)
                 avi->non_interleaved= 1;
             else
+            {
+#ifdef EM8622
+            if(key && st->codec->codec_type == CODEC_TYPE_VIDEO)
+            {
+                av_add_index_entry(st, pos, ast->cum_len / FFMAX(1, ast->sample_size), len, 0, (key) ? AVINDEX_KEYFRAME : 0);
+            }
+            if(st->codec->codec_type != CODEC_TYPE_VIDEO)
+            {
+                if(pos>=nextpos)
+                {
+                    //av_log(s, AV_LOG_ERROR, "adding keyframe %lld\n", pos);
+                    av_add_index_entry(st, pos, ast->cum_len / FFMAX(1, ast->sample_size), len, 0, (key) ? AVINDEX_KEYFRAME : 0);
+                    if(st2!=NULL)
+                    {
+                        for(;k<st2->nb_index_entries;k++)
+                        {
+                            if(st2->index_entries[k].pos>nextpos)
+                            {
+                                nextpos=st2->index_entries[k].pos;
+                                break;
+                            }
+                        }
+                        if(k==st2->nb_index_entries)
+                            nextpos=0x7FFFFFFFFFFFFFFFLL;
+                        //av_log(s, AV_LOG_ERROR, "nextpos k=%d %lld\n", k, nextpos);
+                    }
+                }
+            }
+#else
                 av_add_index_entry(st, pos, ast->cum_len / FFMAX(1, ast->sample_size), len, 0, key ? AVINDEX_KEYFRAME : 0);
-
+#endif
+            }
             if(ast->sample_size)
                 ast->cum_len += len;
             else
@@ -170,6 +243,9 @@ static int read_braindead_odml_indx(AVFormatContext *s, int frame_num){
             url_fseek(pb, pos, SEEK_SET);
         }
     }
+#ifdef EM8622DEBUG
+    av_log(s, AV_LOG_ERROR, "Done parsing ODML index\n");
+#endif
     avi->index_loaded=1;
     return 0;
 }
@@ -208,7 +284,6 @@ static int avi_read_tag(ByteIOContext *pb, char *buf, int maxlen,  unsigned int 
     url_fseek(pb, i+size, SEEK_SET);
     return 0;
 }
-
 static int avi_read_header(AVFormatContext *s, AVFormatParameters *ap)
 {
     AVIContext *avi = s->priv_data;
@@ -217,7 +292,7 @@ static int avi_read_header(AVFormatContext *s, AVFormatParameters *ap)
     int codec_type, stream_index, frame_period, bit_rate;
     unsigned int size, nb_frames;
     int i;
-    AVStream *st;
+    AVStream *st=NULL;
     AVIStream *ast = NULL;
     char str_track[4];
 
@@ -475,8 +550,20 @@ static int avi_read_header(AVFormatContext *s, AVFormatParameters *ap)
             break;
         case MKTAG('i', 'n', 'd', 'x'):
             i= url_ftell(pb);
-            if(!url_is_streamed(pb) && !(s->flags & AVFMT_FLAG_IGNIDX)){
+            if(!url_is_streamed(pb) && !(s->flags & AVFMT_FLAG_IGNIDX))
+            {
+#ifdef EM8622
+                if(st->codec->codec_type == CODEC_TYPE_VIDEO)
+                {
+                    read_braindead_odml_indx(s, 0);
+                }
+                else
+                {
+                    ast->INDXoffset=i;
+                }
+#else
                 read_braindead_odml_indx(s, 0);
+#endif
             }
             url_fseek(pb, i+size, SEEK_SET);
             break;
@@ -526,7 +613,21 @@ static int avi_read_header(AVFormatContext *s, AVFormatParameters *ap)
         }
         return -1;
     }
-
+#ifdef EM8622
+    for(i=0;i<s->nb_streams; i++)
+    {
+        int64_t oldoffset;
+        st= s->streams[i];
+        ast = st->priv_data;
+        if(ast->INDXoffset!=0)
+        {
+            oldoffset=url_ftell(pb);
+            url_fseek(pb, ast->INDXoffset, SEEK_SET);
+            read_braindead_odml_indx(s, 0);
+            url_fseek(pb, oldoffset, SEEK_SET);
+        }
+    }
+#endif
     if(!avi->index_loaded && !url_is_streamed(pb))
         avi_load_index(s);
     avi->index_loaded = 1;
@@ -541,7 +642,8 @@ static int avi_read_packet(AVFormatContext *s, AVPacket *pkt)
 {
     AVIContext *avi = s->priv_data;
     ByteIOContext *pb = &s->pb;
-    int n, d[8], size;
+    int n, d[8];
+    int64_t size;
     offset_t i, sync;
     void* dstr;
 
@@ -606,7 +708,11 @@ resync:
         if(ast->sample_size <= 1) // minorityreport.AVI block_align=1024 sample_size=1 IMA-ADPCM
             size= INT_MAX;
         else if(ast->sample_size < 32)
+#ifdef EM8622
+            size= 512*ast->sample_size;
+#else
             size= 64*ast->sample_size;
+#endif
         else
             size= ast->sample_size;
 
@@ -626,7 +732,12 @@ resync:
 //                pkt->dts += ast->start;
             if(ast->sample_size)
                 pkt->dts /= ast->sample_size;
-//av_log(NULL, AV_LOG_DEBUG, "dts:%"PRId64" offset:%"PRId64" %d/%d smpl_siz:%d base:%d st:%d size:%d\n", pkt->dts, ast->frame_offset, ast->scale, ast->rate, ast->sample_size, AV_TIME_BASE, avi->stream_index, size);
+#ifdef DEBUGAVIDEMUX
+            av_log(NULL, AV_LOG_ERROR, 
+                "dts:%"PRId64" offset:%"PRId64" %d/%d smpl_siz:%d base:%d st:%d size:%d\n",
+                pkt->dts, ast->frame_offset, ast->scale, ast->rate, 
+                ast->sample_size, AV_TIME_BASE, avi->stream_index, size);
+#endif
             pkt->stream_index = avi->stream_index;
 
             if (st->codec->codec_type == CODEC_TYPE_VIDEO) {
@@ -652,6 +763,13 @@ resync:
         ast->remaining -= size;
         if(!ast->remaining){
             avi->stream_index= -1;
+			// NOTE: This was incorrectly comparing the size of the sample instead of the size of the chunk
+			// to determine if we need to eat another byte to align on a WORD
+			// Narflex - but they've changed this in the latest version of FFMPEG so I no longer am sure this is needed
+            if (ast->packet_size & 1) {
+                  get_byte(pb);
+                  size++;
+              }
             ast->packet_size= 0;
         }
 
@@ -674,7 +792,7 @@ resync:
             d[j]= d[j+1];
         d[7]= get_byte(pb);
 
-        size= d[4] + (d[5]<<8) + (d[6]<<16) + (d[7]<<24);
+        size= ((int64_t)d[4]) + (((int64_t)d[5])<<8) + (((int64_t)d[6])<<16) + (((int64_t)d[7])<<24);
 
         if(    d[2] >= '0' && d[2] <= '9'
             && d[3] >= '0' && d[3] <= '9'){
@@ -682,7 +800,9 @@ resync:
         }else{
             n= 100; //invalid stream id
         }
-//av_log(NULL, AV_LOG_DEBUG, "%X %X %X %X %X %X %X %X %"PRId64" %d %d\n", d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], i, size, n);
+#ifdef DEBUGAVIDEMUX
+av_log(NULL, AV_LOG_ERROR, "%X %X %X %X %X %X %X %X %"PRId64" %"PRId64" %d %"PRId64"\n", d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], i, size, n, avi->movi_end);
+#endif
         if(i + size > avi->movi_end || d[0]<0)
             continue;
 
@@ -691,7 +811,9 @@ resync:
         //parse JUNK
            ||(d[0] == 'J' && d[1] == 'U' && d[2] == 'N' && d[3] == 'K')){
             url_fskip(pb, size);
-//av_log(NULL, AV_LOG_DEBUG, "SKIP\n");
+#ifdef DEBUGAVIDEMUX
+av_log(NULL, AV_LOG_ERROR, "SKIP\n");
+#endif
             goto resync;
         }
 
@@ -789,6 +911,9 @@ static int avi_read_idx1(AVFormatContext *s, int size)
     AVIStream *ast;
     unsigned int index, tag, flags, pos, len;
     unsigned last_pos= -1;
+#ifdef EM8622
+    int secondarystreams=0xFFFFFFFF;
+#endif
 
     nb_index_entries = size / 16;
     if (nb_index_entries <= 0)
@@ -821,7 +946,22 @@ static int avi_read_idx1(AVFormatContext *s, int size)
         if(last_pos == pos)
             avi->non_interleaved= 1;
         else
+        {
+#ifdef EM8622
+            if(flags&AVIIF_INDEX && st->codec->codec_type == CODEC_TYPE_VIDEO)
+            {
+                av_add_index_entry(st, pos, ast->cum_len / FFMAX(1, ast->sample_size), len, 0, (flags&AVIIF_INDEX) ? AVINDEX_KEYFRAME : 0);
+                secondarystreams=1<<index;
+            }
+            if(index<32 && st->codec->codec_type != CODEC_TYPE_VIDEO && !(secondarystreams&(1<<index)))
+            {
             av_add_index_entry(st, pos, ast->cum_len / FFMAX(1, ast->sample_size), len, 0, (flags&AVIIF_INDEX) ? AVINDEX_KEYFRAME : 0);
+                secondarystreams|=1<<index;
+            }
+#else
+            av_add_index_entry(st, pos, ast->cum_len / FFMAX(1, ast->sample_size), len, 0, (flags&AVIIF_INDEX) ? AVINDEX_KEYFRAME : 0);
+#endif
+        }
         if(ast->sample_size)
             ast->cum_len += len;
         else

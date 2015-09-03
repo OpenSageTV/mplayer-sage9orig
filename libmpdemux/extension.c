@@ -1,9 +1,9 @@
+#include "config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "config.h"
 
 #include "stream/stream.h"
 #include "demuxer.h"

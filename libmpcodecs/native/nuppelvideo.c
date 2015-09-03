@@ -1,3 +1,4 @@
+#include "config.h"
 /*
  * NuppelVideo 0.05 file parser
  * for MPlayer
@@ -11,7 +12,6 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "config.h"
 #include "mp_msg.h"
 #include "libavutil/common.h"
 #include "mpbswap.h"

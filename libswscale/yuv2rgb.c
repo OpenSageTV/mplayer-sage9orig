@@ -30,12 +30,12 @@
  * context / deglobalize stuff by Michael Niedermayer
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
 #include <assert.h>
 
-#include "config.h"
 #include "rgb2rgb.h"
 #include "swscale.h"
 #include "swscale_internal.h"

@@ -38,7 +38,9 @@
 void ff_spatial_dwt(int *buffer, int width, int height, int stride, int type, int decomposition_count);
 
 /* vorbis.c */
+#ifdef CONFIG_VORBIS_DECODER
 void vorbis_inverse_coupling(float *mag, float *ang, int blocksize);
+#endif
 
 uint8_t ff_cropTbl[256 + 2 * MAX_NEG_CROP] = {0, };
 uint32_t ff_squareTbl[512] = {0, };

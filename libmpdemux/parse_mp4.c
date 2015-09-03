@@ -4,7 +4,7 @@
  * File licensed under the GPL, see http://www.fsf.org/ for more info.
  * Code inspired by libmp4 from http://mpeg4ip.sourceforge.net/.
  */
-   
+#include "config.h"   
 #include <stdio.h>
 #include <inttypes.h>
 #ifdef HAVE_MALLOC_H

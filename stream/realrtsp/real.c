@@ -27,10 +27,10 @@
  *
  */
 
+#include "../config.h"
 #include <stdio.h>
 #include <string.h>
 
-#include "../config.h"
 #include "libavutil/common.h"
 #include "real.h"
 #include "asmrp.h"

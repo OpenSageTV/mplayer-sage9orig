@@ -6,7 +6,7 @@
 /*
  * Modified for use with MPlayer, detailed changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: basetsd.h 18786 2006-06-22 13:34:00Z diego $
+ * $Id: basetsd.h,v 1.3 2007-04-10 19:33:31 Narflex Exp $
  */
 
 #ifndef __WINE_BASETSD_H

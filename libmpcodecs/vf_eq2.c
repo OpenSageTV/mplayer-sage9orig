@@ -9,13 +9,13 @@
  * Michael Niedermayer <michalni@gmx.at> (LUT16)
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <inttypes.h>
 
-#include "config.h"
 #include "mp_msg.h"
 #include "cpudetect.h"
 

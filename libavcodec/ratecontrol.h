@@ -78,6 +78,7 @@ typedef struct RateControlContext{
     uint64_t qscale_sum[5];
     int frame_count[5];
     int last_non_b_pict_type;
+	int last_frame_rc_reset;      /// Narflex: for dynamic rate control
 
     void *non_lavc_opaque;        ///< context for non lavc rc code (for example xvid)
     float dry_run_qscale;         ///< for xvid rc
@@ -88,7 +89,7 @@ typedef struct RateControlContext{
 struct MpegEncContext;
 
 /* rate control */
-int ff_rate_control_init(struct MpegEncContext *s);
+int ff_rate_control_init(struct MpegEncContext *s, int oldbitrate);
 float ff_rate_estimate_qscale(struct MpegEncContext *s, int dry_run);
 void ff_write_pass1_stats(struct MpegEncContext *s);
 void ff_rate_control_uninit(struct MpegEncContext *s);

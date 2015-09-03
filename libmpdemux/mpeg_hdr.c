@@ -1,12 +1,12 @@
 
 // based on libmpeg2/header.c by Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
 
+#include "config.h"
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "config.h"
 #include "mpeg_hdr.h"
 
 #include "mp_msg.h"
@@ -187,15 +187,19 @@ static int read_timeinc(mp_mpeg_header_t * picture, unsigned char * buffer, int 
 
 int mp4_header_process_vol(mp_mpeg_header_t * picture, unsigned char * buffer)
 {
-    unsigned int n, aspect=0, aspectw=0, aspecth=0,  x=1, v;
+    unsigned int n, aspect=0, aspectw=0, aspecth=0,  x=1, v,shape=0;
     
     //begins with 0x0000012x
     picture->fps = 0;
     picture->timeinc_bits = picture->timeinc_resolution = picture->timeinc_unit = 0;
+    // Skip random accessible VOL and video_object_type_indication
     n = 9;
+    // Check for the object_layer_identifier & skip them
     if(getbits(buffer, n, 1))
       n += 7;
-    n++;
+    n++; // for the object_layer_identifier
+    
+    // Pixel aspect ratio info
     aspect=getbits(buffer, n, 4);
     n += 4;
     if(aspect == 0x0f) {
@@ -205,6 +209,7 @@ int mp4_header_process_vol(mp_mpeg_header_t * picture, unsigned char * buffer)
       n += 8;
     }
     
+    // vol_control_parameters
     if(getbits(buffer, n, 1)) {
       n += 4;
       if(getbits(buffer, n, 1))
@@ -212,6 +217,8 @@ int mp4_header_process_vol(mp_mpeg_header_t * picture, unsigned char * buffer)
       n++;
     } else n++;
     
+    // skip video_object_layer_shape && marker_bit
+    shape = getbits(buffer, n, 2);
     n+=3;
     
     picture->timeinc_resolution = getbits(buffer, n, 8) << 8;
@@ -236,7 +243,21 @@ int mp4_header_process_vol(mp_mpeg_header_t * picture, unsigned char * buffer)
       if(picture->timeinc_unit)
         picture->fps = (float) picture->timeinc_resolution / (float) picture->timeinc_unit;
     }
+    else
+    	n++;
     
+    if (shape == 0)
+    {
+    	n++; // marker_bit
+    	picture->display_picture_width = getbits(buffer, n, 5) << 8;
+    	n += 5;
+    	picture->display_picture_width |= getbits(buffer, n, 8);
+    	n += 8;
+    	n++; // marker_bit
+    	picture->display_picture_height = getbits(buffer, n, 5) << 8;
+    	n += 5;
+    	picture->display_picture_height |= getbits(buffer, n, 8);
+    }
     //fprintf(stderr, "ASPECT: %d, PARW=%d, PARH=%d, TIMEINCRESOLUTION: %d, FIXED_TIMEINC: %d (number of bits: %d), FPS: %u\n", 
     //	aspect, aspectw, aspecth, picture->timeinc_resolution, picture->timeinc_unit, picture->timeinc_bits, picture->fps);
     

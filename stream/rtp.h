@@ -2,7 +2,7 @@
  *
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: rtp.h 19326 2006-08-04 19:38:59Z ben $
+ * $Id: rtp.h,v 1.1 2007-04-10 20:11:30 Narflex Exp $
  */
 
 #ifndef _RTP_H

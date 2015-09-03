@@ -1,3 +1,4 @@
+#include "config.h"
 /*
 	raw dv file parser for MPlayer
    by Alexander Neundorf <neundorf@kde.org>

@@ -1,3 +1,4 @@
+#include "config.h"
 /*
  * This file was ported to MPlayer from xine CVS rtsp_session.c,v 1.9 2003/02/11 16:20:40
  */

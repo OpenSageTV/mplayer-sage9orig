@@ -1,7 +1,7 @@
 /*
  * Modified for use with MPlayer, detailed changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: registry.c 22893 2007-04-01 14:42:13Z diego $
+ * $Id: registry.c,v 1.3 2007-04-10 19:33:29 Narflex Exp $
  */
 
 #include "config.h"

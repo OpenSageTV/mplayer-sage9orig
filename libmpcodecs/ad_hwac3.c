@@ -1,3 +1,4 @@
+#include "config.h"
 
 // Reference: DOCS/tech/hwac3.txt !!!!!
 

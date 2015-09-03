@@ -1,13 +1,13 @@
 // Copyright (c) 2004 Michael Niedermayer <michaelni@gmx.at>
 // #inlcude <GPL_v2.h>
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
 #include <math.h>
 
-#include "config.h"
 #include "af.h"
 
 typedef struct af_sweep_s{

@@ -1,5 +1,6 @@
 /* This file (C) Mark Zealey <mark@zealos.org> 2002, released under GPL */
 
+#include "config.h"
 #include <stdio.h>
 #include <string.h>
 #include "geometry.h"

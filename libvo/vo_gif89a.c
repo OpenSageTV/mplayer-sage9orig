@@ -1,3 +1,4 @@
+#include "config.h"
 /*
    MPlayer video driver for animated gif output
   

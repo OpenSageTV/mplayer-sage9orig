@@ -1,3 +1,4 @@
+#include "config.h"
 /* Audio filter that adds and removes channels, according to the
    command line parameter channels. It is stupid and can only add
    silence or copy channels not mix or filter.

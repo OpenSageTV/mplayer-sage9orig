@@ -19,7 +19,7 @@
 
   Modified for use with MPlayer, detailed changelog at
   http://svn.mplayerhq.hu/mplayer/trunk/
-  $Id: afl.c 21277 2006-11-26 18:33:41Z diego $
+  $Id: afl.c,v 1.4 2007-04-10 19:33:29 Narflex Exp $
   
 ***************************************************************************/
 #include "config.h"

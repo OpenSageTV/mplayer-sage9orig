@@ -261,6 +261,8 @@ static int preinit(const char *arg)
 {
 	int parse_err = 0;
 
+	if(CVPixelBufferCreateWithBytes == NULL) return 1;
+	
     if(arg) 
     {
         char *parse_pos = (char *)&arg[0];

@@ -7,7 +7,7 @@
  *
  * Modified for use with MPlayer, changes contained in libdvdread_changes.diff.
  * detailed changelog at http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: bswap.h 21608 2006-12-13 11:23:15Z diego $
+ * $Id: bswap.h,v 1.1 2007-04-10 19:55:02 Narflex Exp $
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

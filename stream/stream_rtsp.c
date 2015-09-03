@@ -16,6 +16,7 @@
  *  along with this program; if not, write to the Free Software Foundation,
  *  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
+#include "config.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -24,7 +25,6 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <ctype.h>
-#include "config.h"
 #ifndef HAVE_WINSOCK2
 #include <netinet/in.h>
 #include <sys/socket.h>

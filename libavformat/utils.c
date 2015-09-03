@@ -181,7 +181,7 @@ int av_new_packet(AVPacket *pkt, int size)
     uint8_t *data;
     if((unsigned)size > (unsigned)size + FF_INPUT_BUFFER_PADDING_SIZE)
         return AVERROR_NOMEM;
-    data = av_malloc(size + FF_INPUT_BUFFER_PADDING_SIZE);
+    data = av_mallocUncached(size + FF_INPUT_BUFFER_PADDING_SIZE);
     if (!data)
         return AVERROR_NOMEM;
     memset(data + size, 0, FF_INPUT_BUFFER_PADDING_SIZE);
@@ -211,6 +211,34 @@ int av_get_packet(ByteIOContext *s, AVPacket *pkt, int size)
     return ret;
 }
 
+int av_get_packet_nobuf(ByteIOContext *s, AVPacket *pkt, int size, offset_t pos)
+{
+    int buffer_size;
+    int ret= av_new_packet(pkt, size);
+
+    if(ret<0)
+        return ret;
+
+    buffer_size=s->buffer_size;
+    s->buffer_size=0; // Temporarily so it won't fill the buffer
+
+    pkt->pos= pos;
+
+    s->buf_ptr = s->buffer;
+    s->buf_end = s->buffer;
+    url_fseek(s, pos, SEEK_SET);
+
+    ret= get_buffer(s, pkt->data, size);
+    if(ret<=0)
+        av_free_packet(pkt);
+    else
+        pkt->size= ret;
+
+    s->buffer_size=buffer_size;
+
+    return ret;
+}
+
 int av_dup_packet(AVPacket *pkt)
 {
     if (pkt->destruct != av_destruct_packet) {
@@ -219,11 +247,11 @@ int av_dup_packet(AVPacket *pkt)
            again */
         if((unsigned)pkt->size > (unsigned)pkt->size + FF_INPUT_BUFFER_PADDING_SIZE)
             return AVERROR_NOMEM;
-        data = av_malloc(pkt->size + FF_INPUT_BUFFER_PADDING_SIZE);
+        data = av_mallocUncached(pkt->size + FF_INPUT_BUFFER_PADDING_SIZE);
         if (!data) {
             return AVERROR_NOMEM;
         }
-        memcpy(data, pkt->data, pkt->size);
+        av_memcpy(data, pkt->data, pkt->size);
         memset(data + pkt->size, 0, FF_INPUT_BUFFER_PADDING_SIZE);
         pkt->data = data;
         pkt->destruct = av_destruct_packet;
@@ -614,8 +642,14 @@ static void compute_pkt_fields(AVFormatContext *s, AVStream *st,
     if(pkt->dts != AV_NOPTS_VALUE && pkt->pts != AV_NOPTS_VALUE && pkt->pts > pkt->dts)
         presentation_delayed = 1;
 
-    if(st->cur_dts == AV_NOPTS_VALUE){
-        st->cur_dts = -delay * pkt->duration;
+    if(st->cur_dts == AV_NOPTS_VALUE)
+    {
+        // JFT, this might not always be true?
+        if(st->start_time == AV_NOPTS_VALUE)
+        {
+            st->start_time = 0;
+        }
+        st->cur_dts = st->start_time - delay * pkt->duration;
     }
 
 //    av_log(NULL, AV_LOG_DEBUG, "IN delayed:%d pts:%"PRId64", dts:%"PRId64" cur_dts:%"PRId64" st:%d pc:%p\n", presentation_delayed, pkt->pts, pkt->dts, st->cur_dts, pkt->stream_index, pc);
@@ -1542,8 +1576,11 @@ static void av_estimate_timings(AVFormatContext *ic, offset_t old_offset)
 {
     int64_t file_size;
 
+	/* If we're in active file mode, then this loop will go on forever so realize that
+	   and stop us if we've found 2 streams*/
+	int activeFile = ((((URLContext *) ic->pb.opaque)->flags & URL_ACTIVEFILE) == URL_ACTIVEFILE);
     /* get the file size, if possible */
-    if (ic->iformat->flags & AVFMT_NOFILE) {
+    if (ic->iformat->flags & AVFMT_NOFILE || activeFile) {
         file_size = 0;
     } else {
         file_size = url_fsize(&ic->pb);
@@ -1618,9 +1655,21 @@ static int try_decode_frame(AVStream *st, const uint8_t *data, int size)
         return ret;
   }
 
-  if(!has_codec_parameters(st->codec)){
+  if(!has_codec_parameters(st->codec) 
+#ifndef EM8622
+    ||
+    st->codec->codec_id == CODEC_ID_H264 ||
+    st->codec->codec_id == CODEC_ID_H263 ||
+    st->codec->codec_id == CODEC_ID_MPEG2VIDEO ||
+    (st->codec->codec_id == CODEC_ID_MPEG4 && !st->need_parsing) 
+#endif
+    )
+    {
     switch(st->codec->codec_type) {
     case CODEC_TYPE_VIDEO:
+#ifdef EM8622
+        st->codec->skip_frame=AVDISCARD_ALL;
+#endif
         ret = avcodec_decode_video(st->codec, &picture,
                                    &got_picture, (uint8_t *)data, size);
         break;
@@ -1652,7 +1701,7 @@ static int get_std_framerate(int i){
 
 int av_find_stream_info(AVFormatContext *ic)
 {
-    int i, count, ret, read_size, j;
+    int i, count, ret, read_size, j, has_video;
     AVStream *st;
     AVPacket pkt1, *pkt;
     AVPacketList *pktl=NULL, **ppktl;
@@ -1690,12 +1739,15 @@ int av_find_stream_info(AVFormatContext *ic)
     count = 0;
     read_size = 0;
     ppktl = &ic->packet_buffer;
+	has_video = 0;
     for(;;) {
         /* check if one codec still needs to be handled */
         for(i=0;i<ic->nb_streams;i++) {
             st = ic->streams[i];
             if (!has_codec_parameters(st->codec))
                 break;
+			if (st->codec->codec_type == CODEC_TYPE_VIDEO)
+				has_video = 1;
             /* variable fps and no guess at the real fps */
             if(   (st->codec->time_base.den >= 101LL*st->codec->time_base.num || st->codec->codec_id == CODEC_ID_MPEG2VIDEO)
                && duration_count[i]<20 && st->codec->codec_type == CODEC_TYPE_VIDEO)
@@ -1712,11 +1764,21 @@ int av_find_stream_info(AVFormatContext *ic)
                 ret = count;
                 break;
             }
+			/* If we're in active file mode, then this loop will go on forever so realize that
+			   and stop us if we've found 2 streams (w/ at least one video) */
+			if ((((URLContext *) ic->pb.opaque)->flags & URL_ACTIVEFILE) == URL_ACTIVEFILE && ic->nb_streams >= 2 &&
+				has_video)
+			{
+				ret = count;
+				break;
         }
+
+        } else {
         /* we did not get all the codec info, but we read too much data */
         if (read_size >= MAX_READ_SIZE) {
             ret = count;
             break;
+        }
         }
 
         /* NOTE: a new stream can be added there if no header in file
@@ -1765,6 +1827,7 @@ int av_find_stream_info(AVFormatContext *ic)
         if (pkt->duration != 0)
             codec_info_nb_frames[st->index]++;
 
+#ifndef EM8622
         {
             int index= pkt->stream_index;
             int64_t last= last_dts[index];
@@ -1788,6 +1851,7 @@ int av_find_stream_info(AVFormatContext *ic)
             if(last == AV_NOPTS_VALUE || duration_count[index]<=1)
                 last_dts[pkt->stream_index]= pkt->dts;
         }
+#endif
         if(st->parser && st->parser->parser->split && !st->codec->extradata){
             int i= st->parser->parser->split(st->codec, pkt->data, pkt->size);
             if(i){
@@ -1802,7 +1866,13 @@ int av_find_stream_info(AVFormatContext *ic)
            decompress the frame. We try to avoid that in most cases as
            it takes longer and uses more memory. For MPEG4, we need to
            decompress for Quicktime. */
-        if (!has_codec_parameters(st->codec) /*&&
+        if (!has_codec_parameters(st->codec))
+        /* && (
+            st->codec->codec_id == CODEC_ID_H264 ||
+            st->codec->codec_id == CODEC_ID_H263 ||
+            st->codec->codec_id == CODEC_ID_MPEG2VIDEO ||
+            (st->codec->codec_id == CODEC_ID_MPEG4 && !st->need_parsing)) ) */
+            /*&&
             (st->codec->codec_id == CODEC_ID_FLV1 ||
              st->codec->codec_id == CODEC_ID_H264 ||
              st->codec->codec_id == CODEC_ID_H263 ||
@@ -1816,9 +1886,11 @@ int av_find_stream_info(AVFormatContext *ic)
              st->codec->codec_id == CODEC_ID_PBM ||
              st->codec->codec_id == CODEC_ID_PPM ||
              st->codec->codec_id == CODEC_ID_SHORTEN ||
-             (st->codec->codec_id == CODEC_ID_MPEG4 && !st->need_parsing))*/)
-            try_decode_frame(st, pkt->data, pkt->size);
-
+             (st->codec->codec_id == CODEC_ID_MPEG4 && !st->need_parsing))
+             ) */
+        {
+        try_decode_frame(st, pkt->data, pkt->size);
+        }
         if (av_rescale_q(codec_info_duration[st->index], st->time_base, AV_TIME_BASE_Q) >= ic->max_analyze_duration) {
             break;
         }

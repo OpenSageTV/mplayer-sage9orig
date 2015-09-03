@@ -1,3 +1,4 @@
+#include "config.h"
 /*
  * NuppelVideo 0.05 file parser
  * for MPlayer

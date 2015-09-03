@@ -1,3 +1,4 @@
+#include "config.h"
 /*
  * HTTP Cookies
  * Reads Netscape and Mozilla cookies.txt files

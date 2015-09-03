@@ -1,3 +1,4 @@
+#include "config.h"
 /********************************************************************
  *                                                                  *
  * THIS FILE IS PART OF THE OggVorbis 'TREMOR' CODEC SOURCE CODE.   *
@@ -12,7 +13,7 @@
  ********************************************************************
 
  function: single-block PCM synthesis
- last mod: $Id: synthesis.c 19256 2006-07-30 01:41:58Z uau $
+ last mod: $Id: synthesis.c,v 1.4 2007-04-10 19:33:33 Narflex Exp $
 
  ********************************************************************/
 

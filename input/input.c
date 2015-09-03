@@ -105,6 +105,10 @@ static mp_cmd_t mp_cmds[] = {
   { MP_CMD_GET_META_TRACK, "get_meta_track", 0, { {-1,{0}} } },
   { MP_CMD_GET_META_GENRE, "get_meta_genre", 0, { {-1,{0}} } },
   { MP_CMD_SWITCH_AUDIO, "switch_audio", 0, { { MP_CMD_ARG_INT,{-1} }, {-1,{0}} } },
+  { MP_CMD_INACTIVE_FILE, "inactive_file", 0, { {-1,{0}} } },
+  { MP_CMD_ACTIVE_FILE, "active_file", 0, { {-1,{0}} } },
+  { MP_CMD_VO_RECTANGLES, "video_out_rectangles", 8, { {MP_CMD_ARG_INT,{0}},{MP_CMD_ARG_INT,{0}},{MP_CMD_ARG_INT,{0}},{MP_CMD_ARG_INT,{0}},
+	{MP_CMD_ARG_INT,{0}},{MP_CMD_ARG_INT,{0}},{MP_CMD_ARG_INT,{0}},{MP_CMD_ARG_INT,{0}}}},
 #ifdef USE_TV
   { MP_CMD_TV_STEP_CHANNEL, "tv_step_channel", 1,  { { MP_CMD_ARG_INT ,{0}}, {-1,{0}} }},
   { MP_CMD_TV_STEP_NORM, "tv_step_norm",0, { {-1,{0}} }  },
@@ -134,6 +138,7 @@ static mp_cmd_t mp_cmds[] = {
   { MP_CMD_SWITCH_VSYNC, "switch_vsync", 0, { {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
   { MP_CMD_LOADFILE, "loadfile", 1, { {MP_CMD_ARG_STRING, {0}}, {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
   { MP_CMD_LOADLIST, "loadlist", 1, { {MP_CMD_ARG_STRING, {0}}, {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
+  { MP_CMD_LOADFILE2, "loadfile2", 3, { {MP_CMD_ARG_STRING, {0}}, {MP_CMD_ARG_INT,{0}}, {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
   { MP_CMD_RUN, "run", 1, { {MP_CMD_ARG_STRING,{0}}, {-1,{0}} } },
   { MP_CMD_VF_CHANGE_RECTANGLE, "change_rectangle", 2, { {MP_CMD_ARG_INT,{0}}, {MP_CMD_ARG_INT,{0}}, {-1,{0}}}},
 

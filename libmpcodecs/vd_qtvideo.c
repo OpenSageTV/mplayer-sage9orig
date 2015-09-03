@@ -1,8 +1,8 @@
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
 
-#include "config.h"
 
 #ifdef MACOSX
 #include <QuickTime/ImageCodec.h>

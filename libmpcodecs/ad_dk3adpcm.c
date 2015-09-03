@@ -1,3 +1,4 @@
+#include "config.h"
 /*
     DK3 ADPCM Decoder for MPlayer
       by Mike Melanson

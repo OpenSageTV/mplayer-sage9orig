@@ -646,12 +646,13 @@ int ff_mpeg4_set_direct_mv(MpegEncContext *s, int mx, int my){
                 time_pp= s->pp_field_time + field_select - i;
                 time_pb= s->pb_field_time + field_select - i;
             }
-            s->mv[0][i][0] = s->p_field_mv_table[i][0][mb_index][0]*time_pb/time_pp + mx;
-            s->mv[0][i][1] = s->p_field_mv_table[i][0][mb_index][1]*time_pb/time_pp + my;
+            // NARFLEX: SageTV Fix divide by zero errors that can happen here
+            s->mv[0][i][0] = (time_pp == 0) ? 0 : (s->p_field_mv_table[i][0][mb_index][0]*time_pb/time_pp) + mx;
+            s->mv[0][i][1] = (time_pp == 0) ? 0 : (s->p_field_mv_table[i][0][mb_index][1]*time_pb/time_pp) + my;
             s->mv[1][i][0] = mx ? s->mv[0][i][0] - s->p_field_mv_table[i][0][mb_index][0]
-                                : s->p_field_mv_table[i][0][mb_index][0]*(time_pb - time_pp)/time_pp;
+				: ((time_pp == 0) ? 0 : (s->p_field_mv_table[i][0][mb_index][0]*(time_pb - time_pp)/time_pp));
             s->mv[1][i][1] = my ? s->mv[0][i][1] - s->p_field_mv_table[i][0][mb_index][1]
-                                : s->p_field_mv_table[i][0][mb_index][1]*(time_pb - time_pp)/time_pp;
+				: ((time_pp == 0) ? 0 : (s->p_field_mv_table[i][0][mb_index][1]*(time_pb - time_pp)/time_pp));
         }
         return MB_TYPE_DIRECT2 | MB_TYPE_16x8 | MB_TYPE_L0L1 | MB_TYPE_INTERLACED;
     }else{

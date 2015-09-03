@@ -27,6 +27,7 @@
  */
 
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,7 +35,6 @@
 #include <errno.h>
 #include <inttypes.h>
 
-#include "config.h"
 
 #include "mp_msg.h"
 #include "help_mp.h"

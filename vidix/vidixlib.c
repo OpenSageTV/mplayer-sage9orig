@@ -1,3 +1,4 @@
+#include "../config.h"
 /*
  * vidixlib.c
  * VIDIXLib - Library for VIDeo Interface for *niX

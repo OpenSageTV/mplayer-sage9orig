@@ -1,4 +1,4 @@
-// $Revision: 22772 $
+// $Revision: 1.4 $
 // MASTER FILE. Use this file as base for translations.
 // Translated files should be sent to the mplayer-DOCS mailing list or
 // to the help messages maintainer, see DOCS/tech/MAINTAINERS.

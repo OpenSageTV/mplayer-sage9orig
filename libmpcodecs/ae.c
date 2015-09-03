@@ -1,3 +1,4 @@
+#include "config.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -10,7 +11,6 @@
 #include "stream/stream.h"
 #include "libmpdemux/muxer.h"
 #include "ae.h"
-#include "config.h"
 
 #include "ae_pcm.h"
 

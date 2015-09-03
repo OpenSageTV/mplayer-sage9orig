@@ -1,7 +1,7 @@
 /*
  * Modified for use with MPlayer, detailed changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: outputpin.c 22416 2007-03-02 18:52:10Z voroshil $
+ * $Id: outputpin.c,v 1.3 2007-04-10 19:33:30 Narflex Exp $
  */
 
 #include "wine/winerror.h"

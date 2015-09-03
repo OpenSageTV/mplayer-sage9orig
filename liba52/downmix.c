@@ -8,7 +8,7 @@
  *
  * Modified for use with MPlayer, changes contained in liba52_changes.diff.
  * detailed changelog at http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: downmix.c 19378 2006-08-13 00:21:14Z diego $
+ * $Id: downmix.c,v 1.4 2007-04-10 19:33:08 Narflex Exp $
  *
  * a52dec is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

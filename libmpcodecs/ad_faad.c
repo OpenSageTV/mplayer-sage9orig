@@ -1,3 +1,4 @@
+#include "config.h"
 /* ad_faad.c - MPlayer AAC decoder using libfaad2
  * This file is part of MPlayer, see http://mplayerhq.hu/ for info.  
  * (c)2002 by Felix Buenemann <atmosfear at users.sourceforge.net>
@@ -152,6 +153,23 @@ static int init(sh_audio_t *sh)
     mp_msg(MSGT_DECAUDIO,MSGL_V,"FAAD: Negotiated samplerate: %ldHz  channels: %d\n", faac_samplerate, faac_channels);
     sh->channels = faac_channels;
     if (audio_output_channels <= 2) sh->channels = faac_channels > 1 ? 2 : 1;
+    
+    /* re-map channels */
+    switch (sh->channels) {
+      default:
+      case 1: /* no action needed */
+      case 2: /* no action needed */
+      case 3: /* no suitable default behavior? */
+      case 4: /* no suitable default behavior? */
+        break;
+      case 5: /* mplayer treats this like 6-channel */
+      case 6:
+        sh->chan_map = af_set_channel_map(6, "04" "10" "21" "32" "43" "55");
+        break;
+      case 7: /* not supported by mplayer? */
+        break;
+    }
+    
     sh->samplerate = faac_samplerate;
     sh->samplesize=2;
     //sh->o_bps = sh->samplesize*faac_channels*faac_samplerate;

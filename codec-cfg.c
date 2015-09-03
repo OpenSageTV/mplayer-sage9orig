@@ -16,6 +16,7 @@
 //disable asserts
 #define NDEBUG 
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -25,7 +26,6 @@
 #include <assert.h>
 #include <string.h>
 
-#include "config.h"
 #include "mp_msg.h"
 #ifdef CODECS2HTML
 #ifdef __GNUC__

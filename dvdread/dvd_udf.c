@@ -8,7 +8,7 @@
  *
  * Modified for use with MPlayer, changes contained in libdvdread_changes.diff.
  * detailed changelog at http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: dvd_udf.c 18786 2006-06-22 13:34:00Z diego $
+ * $Id: dvd_udf.c,v 1.1 2007-04-10 19:55:02 Narflex Exp $
  *
  * dvdudf: parse and read the UDF volume information of a DVD Video
  * Copyright (C) 1999 Christian Wolff for convergence integrated media

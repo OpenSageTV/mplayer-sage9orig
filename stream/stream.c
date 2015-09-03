@@ -1,3 +1,4 @@
+#include "config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,7 +14,6 @@
 #include <signal.h>
 #include <strings.h>
 
-#include "config.h"
 
 #ifndef HAVE_WINSOCK2
 #define closesocket close
@@ -78,8 +78,11 @@ extern stream_info_t stream_info_smb;
 #ifdef STREAMING_LIVE555
 extern stream_info_t stream_info_sdp;
 extern stream_info_t stream_info_rtsp_sip;
-#endif
+#endif;
 
+#ifdef STREAM_SAGETV
+extern stream_info_t stream_info_sagetv;
+#endif
 extern stream_info_t stream_info_cue;
 extern stream_info_t stream_info_null;
 extern stream_info_t stream_info_mf;
@@ -124,6 +127,9 @@ stream_info_t* auto_open_streams[] = {
 #ifdef HAVE_FTP
   &stream_info_ftp,
 #endif
+#ifdef STREAM_SAGETV
+  &stream_info_sagetv,
+#endif
 #ifdef HAVE_VSTREAM
   &stream_info_vstream,
 #endif
@@ -137,7 +143,6 @@ stream_info_t* auto_open_streams[] = {
 #ifdef USE_DVDNAV
   &stream_info_dvdnav,
 #endif
-
   &stream_info_null,
   &stream_info_mf,
   &stream_info_file,
@@ -252,20 +257,20 @@ int stream_fill_buffer(stream_t *s){
   case STREAMTYPE_STREAM:
 #ifdef MPLAYER_NETWORK
     if( s->streaming_ctrl!=NULL ) {
-	    len=s->streaming_ctrl->streaming_read(s->fd,s->buffer,STREAM_BUFFER_SIZE, s->streaming_ctrl);break;
+	    len=s->streaming_ctrl->streaming_read(s->fd,s->buffer,stream_buffer_size, s->streaming_ctrl);break;
     } else {
-      len=read(s->fd,s->buffer,STREAM_BUFFER_SIZE);break;
+      len=read(s->fd,s->buffer,stream_buffer_size);break;
     }
 #else
-    len=read(s->fd,s->buffer,STREAM_BUFFER_SIZE);break;
+    len=read(s->fd,s->buffer,stream_buffer_size);break;
 #endif
   case STREAMTYPE_DS:
-    len = demux_read_data((demux_stream_t*)s->priv,s->buffer,STREAM_BUFFER_SIZE);
+    len = demux_read_data((demux_stream_t*)s->priv,s->buffer,stream_buffer_size);
     break;
   
     
   default: 
-    len= s->fill_buffer ? s->fill_buffer(s,s->buffer,STREAM_BUFFER_SIZE) : 0;
+    len= s->fill_buffer ? s->fill_buffer(s,s->buffer,stream_buffer_size) : 0;
   }
   if(len<=0){ s->eof=1; s->buf_pos=s->buf_len=0; return 0; }
   s->buf_pos=0;
@@ -302,12 +307,13 @@ off_t newpos=0;
   if(s->sector_size)
       newpos = (pos/s->sector_size)*s->sector_size;
   else
-      newpos = pos&(~((off_t)STREAM_BUFFER_SIZE-1));
+      newpos = pos&(~((off_t)stream_buffer_size-1));
 
 if( mp_msg_test(MSGT_STREAM,MSGL_DBG3) ){
   mp_msg(MSGT_STREAM,MSGL_DBG3, "s->pos=%"PRIX64"  newpos=%"PRIX64"  new_bufpos=%"PRIX64"  buflen=%X  \n",
     (int64_t)s->pos,(int64_t)newpos,(int64_t)pos,s->buf_len);
 }
+
   pos-=newpos;
 
 if(newpos==0 || newpos!=s->pos){

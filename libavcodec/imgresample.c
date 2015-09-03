@@ -525,6 +525,15 @@ static void component_resample(ImgReSampleContext *s,
         }
         /* apply vertical filter */
         phase_y = get_phase(src_y);
+
+		if ((2 << POS_FRAC_BITS) == s->v_incr)
+		{
+			// Do a straight copy, don't bother to resample in the vertical dimension. That way
+			// we can avoid deinterlacing before we do the resample and just take fields.
+			memcpy(output, s->line_buf + ring_y*owidth, owidth);
+		}
+		else
+		{
 #ifdef HAVE_MMX
         /* desactivated MMX because loss of precision */
         if ((mm_flags & MM_MMX) && NB_TAPS == 4 && 0)
@@ -543,6 +552,7 @@ static void component_resample(ImgReSampleContext *s,
             v_resample(output, owidth,
                        s->line_buf + (ring_y - NB_TAPS + 1) * owidth, owidth,
                        &s->v_filters[phase_y][0]);
+		}
 
         src_y += s->v_incr;
 

@@ -1,3 +1,4 @@
+#include "config.h"
 /*
  * Network layer for MPlayer
  * by Bertrand BAUDET <bertrand_baudet@yahoo.com>

@@ -47,37 +47,6 @@ static ogg_codec_t *ogg_codecs[] = {
     NULL
 };
 
-#if 0                           // CONFIG_MUXERS
-static int
-ogg_write_header (AVFormatContext * avfcontext)
-{
-}
-
-static int
-ogg_write_packet (AVFormatContext * avfcontext, AVPacket * pkt)
-{
-}
-
-
-static int
-ogg_write_trailer (AVFormatContext * avfcontext)
-{
-}
-
-
-AVOutputFormat ogg_muxer = {
-    "ogg",
-    "Ogg format",
-    "application/ogg",
-    "ogg",
-    sizeof (OggContext),
-    CODEC_ID_VORBIS,
-    0,
-    ogg_write_header,
-    ogg_write_packet,
-    ogg_write_trailer,
-};
-#endif //CONFIG_MUXERS
 
 //FIXME We could avoid some structure duplication
 static int
@@ -328,8 +297,9 @@ ogg_read_page (AVFormatContext * s, int *str)
     return 0;
 }
 
+// NARFLEX: Add 'ap' so we can detect dump_metadata bit being set
 static int
-ogg_packet (AVFormatContext * s, int *str, int *dstart, int *dsize)
+ogg_packet (AVFormatContext * s, int *str, int *dstart, int *dsize, int dump_metadata)
 {
     ogg_t *ogg = s->priv_data;
     int idx;
@@ -356,6 +326,40 @@ ogg_packet (AVFormatContext * s, int *str, int *dstart, int *dsize)
                 "ogg_packet: idx=%d pstart=%d psize=%d segp=%d nsegs=%d\n",
                 idx, os->pstart, os->psize, os->segp, os->nsegs);
 #endif
+		// NARFLEX: This is where we extract the metadata from the OGG file and dump it
+		if (dump_metadata && os->buf[os->pstart] == 0x3 && os->header < 0)
+		{
+			// Comment field
+			if (os->buf[os->pstart + 1] == 'v' &&
+				os->buf[os->pstart + 2] == 'o' &&
+				os->buf[os->pstart + 3] == 'r' &&
+				os->buf[os->pstart + 4] == 'b' &&
+				os->buf[os->pstart + 5] == 'i' &&
+				os->buf[os->pstart + 6] == 's')
+			{
+				// marker checked
+				int numComments;
+				int offset = os->pstart + 7;
+				char commentBuf[256];
+				int venLength = (os->buf[offset]) | (os->buf[offset + 1] << 8) | (os->buf[offset + 2] << 16) | (os->buf[offset+3] << 24);
+				offset += venLength + 4; // skip the vendor info
+				numComments = (os->buf[offset]) | (os->buf[offset + 1] << 8) | (os->buf[offset + 2] << 16) | (os->buf[offset+3] << 24);
+				offset += 4;
+#if 0
+				av_log(s, AV_LOG_DEBUG, "Vorbis comments found %d\n", numComments);
+#endif
+				while (numComments > 0)
+				{
+					int comLength = (os->buf[offset]) | (os->buf[offset + 1] << 8) | (os->buf[offset + 2] << 16) | (os->buf[offset+3] << 24);
+					offset += 4;
+					strncpy(commentBuf, &(os->buf[offset]), comLength < 255 ? comLength : 255);
+					commentBuf[comLength < 255 ? comLength : 255] = '\0';
+					av_log(NULL, AV_LOG_INFO, "META:%s\n", commentBuf);
+					numComments--;
+					offset += comLength;
+				}
+			}
+		}
 
         if (!os->codec){
             if (os->header < 0){
@@ -428,12 +432,13 @@ ogg_packet (AVFormatContext * s, int *str, int *dstart, int *dsize)
 }
 
 static int
-ogg_get_headers (AVFormatContext * s)
+ogg_get_headers (AVFormatContext * s, AVFormatParameters * ap)
 {
     ogg_t *ogg = s->priv_data;
 
     do{
-        if (ogg_packet (s, NULL, NULL, NULL) < 0)
+		// NARFLEX: Add 'ap' so we can detect dump_metadata bit being set
+        if (ogg_packet (s, NULL, NULL, NULL, ap->dump_metadata) < 0)
             return -1;
     }while (!ogg->headers);
 
@@ -483,9 +488,11 @@ ogg_get_length (AVFormatContext * s)
     ogg_save (s);
     url_fseek (&s->pb, end, SEEK_SET);
 
+	// NARFLEX: SageTV, I added the '&& !i' to this conditional so it took the first stream.
+	// I had test files that this fixed a duration detection problem on.
     while (!ogg_read_page (s, &i)){
         if (ogg->streams[i].granule != -1 && ogg->streams[i].granule != 0 &&
-            ogg->streams[i].codec)
+            ogg->streams[i].codec && !i)
             idx = i;
     }
 
@@ -517,7 +524,8 @@ ogg_read_header (AVFormatContext * s, AVFormatParameters * ap)
     ogg_t *ogg = s->priv_data;
     ogg->curidx = -1;
     //linear headers seek from start
-    if (ogg_get_headers (s) < 0){
+	// NARFLEX: Add 'ap' so we can detect dump_metadata bit being set
+    if (ogg_get_headers (s, ap) < 0){
       return -1;
     }
 
@@ -539,7 +547,8 @@ ogg_read_packet (AVFormatContext * s, AVPacket * pkt)
 
     //Get an ogg packet
     do{
-        if (ogg_packet (s, &idx, &pstart, &psize) < 0)
+		// NARFLEX: Add 'ap' (NULL) so we can detect dump_metadata bit being set
+        if (ogg_packet (s, &idx, &pstart, &psize, 0) < 0)
             return AVERROR_IO;
     }while (idx < 0 || !s->streams[idx]);
 
@@ -575,86 +584,27 @@ ogg_read_close (AVFormatContext * s)
 }
 
 
-static int
-ogg_read_seek (AVFormatContext * s, int stream_index, int64_t target_ts,
-               int flags)
+static int64_t
+ogg_read_timestamp (AVFormatContext * s, int stream_index, int64_t * pos_arg,
+                     int64_t pos_limit)
 {
-    AVStream *st = s->streams[stream_index];
     ogg_t *ogg = s->priv_data;
     ByteIOContext *bc = &s->pb;
-    uint64_t min = 0, max = ogg->size;
-    uint64_t tmin = st->start_time, tmax = st->start_time + st->duration;
     int64_t pts = AV_NOPTS_VALUE;
-
-    ogg_save (s);
-
-    if ((uint64_t)target_ts < tmin || target_ts < 0)
-        target_ts = tmin;
-    while (min <= max && tmin < tmax){
-        uint64_t p = min + (max - min) * (target_ts - tmin) / (tmax - tmin);
-        int i = -1;
-
-        url_fseek (bc, p, SEEK_SET);
-
-        while (!ogg_read_page (s, &i)){
-            if (i == stream_index && ogg->streams[i].granule != 0 &&
-                ogg->streams[i].granule != -1)
+    int i;
+    url_fseek(bc, *pos_arg, SEEK_SET);
+    while (url_ftell(bc) < pos_limit && !ogg_read_page (s, &i)) {
+        if (ogg->streams[i].granule != -1 && ogg->streams[i].granule != 0 &&
+            ogg->streams[i].codec && i == stream_index) {
+            pts = ogg_gptopts(s, i, ogg->streams[i].granule);
+            // FIXME: this is the position of the packet after the one with above
+            // pts.
+            *pos_arg = url_ftell(bc);
                 break;
         }
-
-        if (i == -1)
-            break;
-
-        pts = ogg_gptopts (s, i, ogg->streams[i].granule);
-        p = url_ftell (bc);
-
-        if (FFABS (pts - target_ts) * st->time_base.num < st->time_base.den)
-            break;
-
-        if (pts > target_ts){
-            if (max == p && tmax == pts) {
-                // probably our tmin is wrong, causing us to always end up too late in the file
-                tmin = (target_ts + tmin + 1) / 2;
-                if (tmin == target_ts) {
-                    url_fseek(bc, min, SEEK_SET);
-                    break;
-                }
-            }
-            max = p;
-            tmax = pts;
-        }else{
-            if (min == p && tmin == pts) {
-                // probably our tmax is wrong, causing us to always end up too early in the file
-                tmax = (target_ts + tmax) / 2;
-                if (tmax == target_ts) {
-                    url_fseek(bc, max, SEEK_SET);
-                    break;
-                }
-            }
-            min = p;
-            tmin = pts;
-        }
     }
-
-    if (FFABS (pts - target_ts) * st->time_base.num < st->time_base.den){
-        ogg_restore (s, 1);
-        ogg_reset (ogg);
-    }else{
-        ogg_restore (s, 0);
-        pts = AV_NOPTS_VALUE;
-    }
-
-    av_update_cur_dts(s, st, pts);
-    return 0;
-
-#if 0
-    //later...
-    int64_t pos;
-    if (av_seek_frame_binary (s, stream_index, target_ts, flags) < 0)
-        return -1;
-    pos = url_ftell (&s->pb);
-    ogg_read_timestamp (s, stream_index, &pos, pos - 1);
-#endif
+    ogg_reset(ogg);
+    return pts;
 
 }
 
@@ -694,7 +644,7 @@ AVInputFormat ogg_demuxer = {
     ogg_read_header,
     ogg_read_packet,
     ogg_read_close,
-    ogg_read_seek,
-// ogg_read_timestamp,
+    NULL,
+    ogg_read_timestamp,
     .extensions = "ogg",
 };

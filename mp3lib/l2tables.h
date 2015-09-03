@@ -1,7 +1,7 @@
 /*
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: l2tables.h 18786 2006-06-22 13:34:00Z diego $
+ * $Id: l2tables.h,v 1.3 2007-04-10 19:33:31 Narflex Exp $
  */
 
 /*

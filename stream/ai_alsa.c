@@ -1,8 +1,8 @@
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
 
-#include "config.h"
 
 #include <alsa/asoundlib.h>
 #include "audio_in.h"

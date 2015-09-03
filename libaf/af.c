@@ -1,3 +1,4 @@
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -359,17 +360,40 @@ int af_init(af_stream_t* s)
 
   // Check if this is the first call
   if(!s->first){
-    // Add all filters in the list (if there are any)
-    if(!s->cfg.list){      // To make automatic format conversion work
-      if(!af_append(s,s->first,"dummy")) 
+    /* remap channels if the codec/demuxer provides a channel map */
+    if (s->chan_map) {
+      af_control_ext_t arg;
+      arg.ch = s->input.nch;
+      af_instance_t *af = NULL;
+      af=af_append(s, s->first, "channels");
+      /* set up af_channels to route */
+      if (!af || (AF_OK != af->control(af, AF_CONTROL_CHANNELS_ROUTER, &s->input.nch)))
+        return -1;
+      if (!af || (AF_OK != af->control(af, AF_CONTROL_CHANNELS_NR, &s->input.nch)))
+        return -1;
+      /* set up each route */
+      for (arg.ch = 0; arg.ch < s->input.nch; ++arg.ch) {
+        arg.arg = s->chan_map + 2*arg.ch; /* two by two... */
+        if (!af || (AF_OK != af->control(af, AF_CONTROL_CHANNELS_ROUTING, &arg)))
 	return -1; 
     }
-    else{
+      if (!af || (AF_OK != af->control(af, AF_CONTROL_CHANNELS, &s->input.nch)))
+        return -1;
+      if (AF_OK != af_reinit(s,af))
+        return -1;
+    }
+	  // Add all filters in the list (if there are any)
+	if (s->cfg.list) {
       while(s->cfg.list[i]){
 	if(!af_append(s,s->last,s->cfg.list[i++]))
 	  return -1;
       }
     }
+	// To make automatic format conversion work
+	if (!s->first) {
+		if(!af_append(s, s->first, "dummy"))
+			return -1;
+	}
   }
 
   // Init filters 
@@ -710,4 +734,25 @@ void af_help (void) {
 void af_fix_parameters(af_data_t *data)
 {
     data->bps = af_fmt2bits(data->format)/8;
+}
+
+
+int *af_set_channel_map(int channels, char *routes){
+  int *chan_map, *ptr;
+  ptr=chan_map=malloc(2 * channels * sizeof(int));
+  if (!chan_map) {
+    mp_msg(MSGT_DEMUX, MSGL_ERR, "set_channel_map: cannot malloc for %d channels\n", channels);
+    return 0;
+  }
+  while (channels-- > 0) {
+    if (*routes == '\0' || *(routes+1) == '\0') { 
+      mp_msg(MSGT_DEMUX, MSGL_ERR, "set_channel_map: not enough routes\n");
+      free(chan_map);
+      return 0;
+    }
+    /* two by two... */
+    *ptr++ = *routes++ - '0';
+    *ptr++ = *routes++ - '0';
+  }
+  return chan_map;
 }

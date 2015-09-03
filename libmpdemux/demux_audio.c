@@ -507,13 +507,27 @@ static int demux_audio_open(demuxer_t* demuxer) {
 	      int64_t size = demuxer->movi_end - demuxer->movi_start;
 	      int64_t num_samples = 0;
 	      int32_t srate = 0;
+		  int32_t num_samples_high = 0;
 	      stream_skip(s, 14);
 	      stream_read(s, (char *)&srate, 3);
 	      srate = be2me_32(srate) >> 12;
-	      stream_read(s, (char *)&num_samples, 5);
-	      num_samples = (be2me_64(num_samples) >> 24) & 0xfffffffffULL;
+		  stream_read(s, (char *)&num_samples_high, 1);
+		  
+		  stream_read(s, (char *)&num_samples, 4);
+	      num_samples = be2me_32(num_samples) | ((be2me_32(num_samples_high) & 0xf) << 32);
 	      if (num_samples && srate)
 	        sh_audio->i_bps = size * srate / num_samples;
+		  // NARFLEX: This is needed here so the bitrate setting is done properly in ad_ffmpeg.c
+		  // Otherwise it'll use the bitrate from the AVCodecContext which may not have been set and
+		  // override the one we calculated here since we know the file size and therefore can do that calculation
+		  sh_audio->wf = malloc(sizeof(WAVEFORMATEX));
+		  sh_audio->wf->wFormatTag = 0;
+		  sh_audio->wf->nChannels = 2;
+		  sh_audio->wf->nSamplesPerSec = srate;
+		  sh_audio->wf->nAvgBytesPerSec = sh_audio->i_bps;
+		  sh_audio->wf->nBlockAlign = 1;
+		  sh_audio->wf->wBitsPerSample = 16;
+		  sh_audio->wf->cbSize = 0;    
 	    }
 	    if (sh_audio->i_bps < 1) // guess value to prevent crash
 	      sh_audio->i_bps = 64 * 1024;

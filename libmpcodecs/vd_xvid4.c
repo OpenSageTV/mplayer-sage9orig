@@ -25,10 +25,10 @@
  * Includes
  ****************************************************************************/
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "config.h"
 #include "mp_msg.h"
 
 #include "vd_internal.h"

@@ -25,6 +25,7 @@
  * Portable IEEE float/double read/write functions.
  */
 
+#include <math.h>
 #include "common.h"
 #include "intfloat_readwrite.h"
 

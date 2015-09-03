@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: pnm.c 19620 2006-09-01 12:11:11Z diego $
+ * $Id: pnm.c,v 1.1 2007-04-10 20:11:30 Narflex Exp $
  *
  * pnm protocol implementation 
  * based upon code from joschka

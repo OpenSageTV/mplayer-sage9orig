@@ -69,6 +69,7 @@ void *av_fast_realloc(void *ptr, unsigned int *size, unsigned int min_size)
     return av_realloc(ptr, *size);
 }
 
+
 static unsigned int last_static = 0;
 static unsigned int allocated_static = 0;
 static void** array_static = NULL;
@@ -1093,7 +1094,15 @@ void avcodec_string(char *buf, int buf_size, AVCodecContext *enc, int encode)
                      ", %d/%d",
                      enc->time_base.num/g, enc->time_base.den/g);
             }
+			if (enc->sample_aspect_ratio.num && enc->sample_aspect_ratio.den) {
+				int g = ff_gcd(enc->sample_aspect_ratio.num * enc->width, enc->sample_aspect_ratio.den * enc->height);
+				snprintf(buf + strlen(buf), buf_size - strlen(buf),
+					", AR: %d:%d", 
+					(enc->sample_aspect_ratio.num * enc->width)/g, (enc->sample_aspect_ratio.den * enc->height)/g);
+			}
         }
+		snprintf(buf + strlen(buf), buf_size - strlen(buf),
+			(enc->interlaced) ? ", interlaced" : ", progressive");
         if (encode) {
             snprintf(buf + strlen(buf), buf_size - strlen(buf),
                      ", q=%d-%d", enc->qmin, enc->qmax);
@@ -1283,7 +1292,7 @@ int av_get_bits_per_sample(enum CodecID codec_id){
         return 32;
     default:
         return 0;
-    }
+}
 }
 
 #if !defined(HAVE_THREADS)

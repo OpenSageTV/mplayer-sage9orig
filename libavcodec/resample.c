@@ -30,7 +30,7 @@ struct AVResampleContext;
 
 struct ReSampleContext {
     struct AVResampleContext *resample_context;
-    short *temp[2];
+    short *temp[6];
     int temp_len;
     float ratio;
     /* channel convert */
@@ -88,24 +88,41 @@ static void mono_to_stereo(short *output, short *input, int n1)
     }
 }
 
-/* XXX: should use more abstract 'N' channels system */
-static void stereo_split(short *output1, short *output2, short *input, int n)
+static void multichannel_split(short **outputs, short *input, int n, int chancount)
 {
-    int i;
+    int i,j;
 
-    for(i=0;i<n;i++) {
-        *output1++ = *input++;
-        *output2++ = *input++;
+    for(i=0;i<n;i++) 
+    {
+        for(j=0;j<chancount;j++)
+        {
+            outputs[j][i] = *input++;
+        }
+        // HACK to get around the fact decode/encode don't expect same channel order
+        if(chancount==6)
+        {   // input is lfe, left, center, right, left surround, right surround 
+            // output is left, center, right, left surround, right surround, lfe
+            j=outputs[0][i];
+            outputs[0][i]=outputs[1][i];
+            outputs[1][i]=outputs[2][i];
+            outputs[2][i]=outputs[3][i];
+            outputs[3][i]=outputs[4][i];
+            outputs[4][i]=outputs[5][i];
+            outputs[5][i]=j;
+        }
     }
 }
 
-static void stereo_mux(short *output, short *input1, short *input2, int n)
+static void multichannel_mux(short *output, short **inputs, int n, int chancount)
 {
-    int i;
+    int i,j;
 
-    for(i=0;i<n;i++) {
-        *output++ = *input1++;
-        *output++ = *input2++;
+    for(i=0;i<n;i++) 
+    {
+        for(j=0;j<chancount;j++)
+        {
+            *output++ = inputs[j][i];
+        }
     }
 }
 
@@ -131,9 +148,14 @@ ReSampleContext *audio_resample_init(int output_channels, int input_channels,
 {
     ReSampleContext *s;
 
-    if ( input_channels > 2)
+    if ( input_channels!=output_channels && input_channels > 2 )
       {
-        av_log(NULL, AV_LOG_ERROR, "Resampling with input channels greater than 2 unsupported.");
+        av_log(NULL, AV_LOG_ERROR, "Resampling with input channels greater than 2 unsupported if input count is not output count.");
+        return NULL;
+      }
+    if ( input_channels > 6 || output_channels > 6 )
+    {
+        av_log(NULL, AV_LOG_ERROR, "Resampling can't handle more than 6 channels.");
         return NULL;
       }
 
@@ -158,9 +180,10 @@ ReSampleContext *audio_resample_init(int output_channels, int input_channels,
  * input channels can't be greater than 2, so resample the 2 channels and then
  * expand to 6 channels after the resampling.
  */
-    if(s->filter_channels>2)
+    if(input_channels!=output_channels && s->filter_channels>2)
       s->filter_channels = 2;
 
+    av_log(NULL, AV_LOG_ERROR, "s->filter_channels %d\n", s->filter_channels);
 #define TAPS 16
     s->resample_context= av_resample_init(output_rate, input_rate, TAPS, 10, 0, 0.8);
 
@@ -171,10 +194,10 @@ ReSampleContext *audio_resample_init(int output_channels, int input_channels,
 /* XXX: optimize it ! */
 int audio_resample(ReSampleContext *s, short *output, short *input, int nb_samples)
 {
-    int i, nb_samples1;
-    short *bufin[2];
-    short *bufout[2];
-    short *buftmp2[2], *buftmp3[2];
+    int i, nb_samples1, j;
+    short *bufin[6];
+    short *bufout[6];
+    short *buftmp2[6], *buftmp3[6];
     int lenout;
 
     if (s->input_channels == s->output_channels && s->ratio == 1.0 && 0) {
@@ -192,8 +215,10 @@ int audio_resample(ReSampleContext *s, short *output, short *input, int nb_sampl
 
     /* make some zoom to avoid round pb */
     lenout= (int)(nb_samples * s->ratio) + 16;
-    bufout[0]= (short*) av_malloc( lenout * sizeof(short) );
-    bufout[1]= (short*) av_malloc( lenout * sizeof(short) );
+    for(j=0;j<s->filter_channels;j++)
+    {
+        bufout[j]= (short*) av_malloc( lenout * sizeof(short) );
+    }
 
     if (s->input_channels == 2 &&
         s->output_channels == 1) {
@@ -203,9 +228,11 @@ int audio_resample(ReSampleContext *s, short *output, short *input, int nb_sampl
         buftmp3[0] = bufout[0];
         memcpy(buftmp2[0], input, nb_samples*sizeof(short));
     } else if (s->output_channels >= 2) {
-        buftmp3[0] = bufout[0];
-        buftmp3[1] = bufout[1];
-        stereo_split(buftmp2[0], buftmp2[1], input, nb_samples);
+        for(j=0;j<s->filter_channels;j++)
+        {
+            buftmp3[j] = bufout[j];
+        }
+        multichannel_split((short **)&buftmp2[0], input, nb_samples, s->filter_channels);
     } else {
         buftmp3[0] = output;
         memcpy(buftmp2[0], input, nb_samples*sizeof(short));
@@ -227,8 +254,8 @@ int audio_resample(ReSampleContext *s, short *output, short *input, int nb_sampl
 
     if (s->output_channels == 2 && s->input_channels == 1) {
         mono_to_stereo(output, buftmp3[0], nb_samples1);
-    } else if (s->output_channels == 2) {
-        stereo_mux(output, buftmp3[0], buftmp3[1], nb_samples1);
+    } else if (s->output_channels == s->input_channels) {
+        multichannel_mux(output, (short **) &buftmp3[0], nb_samples1, s->input_channels);
     } else if (s->output_channels == 6) {
         ac3_5p1_mux(output, buftmp3[0], buftmp3[1], nb_samples1);
     }
@@ -236,15 +263,20 @@ int audio_resample(ReSampleContext *s, short *output, short *input, int nb_sampl
     for(i=0; i<s->filter_channels; i++)
         av_free(bufin[i]);
 
-    av_free(bufout[0]);
-    av_free(bufout[1]);
+    for(j=0;j<s->filter_channels;j++)
+    {
+        av_free(bufout[j]);
+    }
     return nb_samples1;
 }
 
 void audio_resample_close(ReSampleContext *s)
 {
+    int j;
     av_resample_close(s->resample_context);
-    av_freep(&s->temp[0]);
-    av_freep(&s->temp[1]);
+    for(j=0; j<s->filter_channels; j++)
+    {
+        av_freep(&s->temp[j]);
+    }
     av_free(s);
 }

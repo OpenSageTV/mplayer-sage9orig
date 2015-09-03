@@ -15,7 +15,7 @@
 /*
  * Modified for use with MPlayer, detailed changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: ldt_keeper.c 22733 2007-03-18 22:18:11Z nicodvb $
+ * $Id: ldt_keeper.c,v 1.4 2007-04-10 19:33:29 Narflex Exp $
  */
 
 #include "ldt_keeper.h"

@@ -8,7 +8,7 @@
  *
  * Modified for use with MPlayer, changes contained in liba52_changes.diff.
  * detailed changelog at http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: parse.c 20779 2006-11-08 14:48:36Z gpoirier $
+ * $Id: parse.c,v 1.3 2007-04-10 19:33:08 Narflex Exp $
  *
  * a52dec is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

@@ -8,7 +8,7 @@
  *
  * Modified for use with MPlayer, changes contained in liba52_changes.diff.
  * detailed changelog at http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: bitstream.h 18786 2006-06-22 13:34:00Z diego $
+ * $Id: bitstream.h,v 1.3 2007-04-10 19:33:08 Narflex Exp $
  *
  * a52dec is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

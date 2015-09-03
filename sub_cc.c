@@ -12,12 +12,12 @@
  * uses source from the xine closed captions decoder
  */
 
+#include "config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "config.h"
 #include "sub_cc.h"
 
 #include "subreader.h"

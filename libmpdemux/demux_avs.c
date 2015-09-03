@@ -1,3 +1,4 @@
+#include "config.h"
 /*
  * Demuxer for avisynth
  * Copyright (c) 2005 Gianluigi Tiesi <sherpya@netfarm.it>

@@ -1,3 +1,4 @@
+#include "config.h"
 
 /*
  * Nullsoft Streaming Video demuxer

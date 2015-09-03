@@ -20,6 +20,7 @@
  */
 
 /* ------------------------------------------------------------------------- */
+#include "config.h"
 
 /* Global Includes */
 
@@ -32,7 +33,6 @@
 
 /* Local Includes */
 
-#include "config.h"
 #include "subopt-helper.h"
 #include "mp_msg.h"
 #include "video_out.h"

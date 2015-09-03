@@ -9,7 +9,7 @@
  ***********************************
  *
  * Initially modified for use with MPlayer by Diego Biurrun on 2004-08-22
- * $Id: genres.h 18786 2006-06-22 13:34:00Z diego $
+ * $Id: genres.h,v 1.2 2007-04-10 19:33:22 Narflex Exp $
  * detailed changelog at http://svn.mplayerhq.hu/mplayer/trunk/
  */
 

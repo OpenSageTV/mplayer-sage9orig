@@ -1,6 +1,6 @@
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "config.h"
 #include "mp_msg.h"
 #include "edl.h"
 #include "help_mp.h"

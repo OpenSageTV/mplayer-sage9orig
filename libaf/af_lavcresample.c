@@ -1,3 +1,4 @@
+#include "config.h"
 // Copyright (c) 2004 Michael Niedermayer <michaelni@gmx.at>
 // #inlcude <GPL_v2.h>
 
@@ -6,7 +7,6 @@
 #include <string.h>
 #include <inttypes.h>
 
-#include "config.h"
 #include "af.h"
 
 #ifdef USE_LIBAVCODEC_SO

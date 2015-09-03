@@ -10,7 +10,7 @@
 # Thanks to Melchior Franz of the FlightGear project for the original idea
 # of a source-tree checker and Torinthiel for the feedback along the way.
 
-# $Id: checktree.sh 22527 2007-03-12 17:16:45Z ivo $
+# $Id: checktree.sh,v 1.1 2007-04-10 20:11:29 Narflex Exp $
 
 # -----------------------------------------------------------------------------
 

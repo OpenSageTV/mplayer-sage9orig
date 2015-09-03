@@ -1,3 +1,4 @@
+#include "config.h"
 /**
  * Musepack audio files decoder for MPlayer
  * by Reza Jelveh <reza.jelveh@tuhh.de> and

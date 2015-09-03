@@ -19,6 +19,7 @@
 #ifndef WIN32
 #include <sys/wait.h>
 #include "osdep/shmem.h"
+#include <pthread.h>
 #else
 #include <windows.h>
 static DWORD WINAPI ThreadProc(void* s);
@@ -32,28 +33,6 @@ static DWORD WINAPI ThreadProc(void* s);
 
 int stream_fill_buffer(stream_t *s);
 int stream_seek_long(stream_t *s,off_t pos);
-
-typedef struct {
-  // constats:
-  unsigned char *buffer;      // base pointer of the alllocated buffer memory
-  int buffer_size; // size of the alllocated buffer memory
-  int sector_size; // size of a single sector (2048/2324)
-  int back_size;   // we should keep back_size amount of old bytes for backward seek
-  int fill_limit;  // we should fill buffer only if space>=fill_limit
-  int seek_limit;  // keep filling cache if distanse is less that seek limit
-  // filler's pointers:
-  int eof;
-  off_t min_filepos; // buffer contain only a part of the file, from min-max pos
-  off_t max_filepos;
-  off_t offset;      // filepos <-> bufferpos  offset value (filepos of the buffer's first byte)
-  // reader's pointers:
-  off_t read_filepos;
-  // commands/locking:
-//  int seek_lock;   // 1 if we will seek/reset buffer, 2 if we are ready for cmd
-//  int fifo_flag;  // 1 if we should use FIFO to notice cache about buffer reads.
-  // callback
-  stream_t* stream;
-} cache_vars_t;
 
 static int min_fill=0;
 
@@ -70,7 +49,7 @@ int cache_read(cache_vars_t* s,unsigned char* buf,int size){
   while(size>0){
     int pos,newb,len;
 
-  //printf("CACHE2_READ: 0x%X <= 0x%X <= 0x%X  \n",s->min_filepos,s->read_filepos,s->max_filepos);
+//printf("CACHE2_READ: 0x%X <= 0x%X <= 0x%X  \n",s->min_filepos,s->read_filepos,s->max_filepos);
     
     if(s->read_filepos>=s->max_filepos || s->read_filepos<s->min_filepos){
 	// eof?
@@ -83,7 +62,7 @@ int cache_read(cache_vars_t* s,unsigned char* buf,int size){
     newb=s->max_filepos-s->read_filepos; // new bytes in the buffer
     if(newb<min_fill) min_fill=newb; // statistics...
 
-//    printf("*** newb: %d bytes ***\n",newb);
+//printf("*** newb: %d bytes ***\n",newb);
 
     pos=s->read_filepos - s->offset;
     if(pos<0) pos+=s->buffer_size; else
@@ -96,7 +75,7 @@ int cache_read(cache_vars_t* s,unsigned char* buf,int size){
     if(s->read_filepos<s->min_filepos) mp_msg(MSGT_CACHE,MSGL_ERR,"Ehh. s->read_filepos<s->min_filepos !!! Report bug...\n");
     
     // len=write(mem,newb)
-    //printf("Buffer read: %d bytes\n",newb);
+//printf("Buffer read: %d bytes\n",newb);
     memcpy(buf,&s->buffer[pos],newb);
     buf+=newb;
     len=newb;
@@ -112,7 +91,7 @@ int cache_read(cache_vars_t* s,unsigned char* buf,int size){
 }
 
 int cache_fill(cache_vars_t* s){
-  int back,back2,newb,space,len,pos;
+int back,back2,newb,space,len,pos;
   off_t read=s->read_filepos;
   
   if(read<s->min_filepos || read>s->max_filepos){
@@ -124,6 +103,7 @@ int cache_fill(cache_vars_t* s){
       {
         s->offset= // FIXME!?
         s->min_filepos=s->max_filepos=read; // drop cache content :(
+		s->stream->activeFileFlag = s->streamOriginal->activeFileFlag;
         if(s->stream->eof) stream_reset(s->stream);
         stream_seek(s->stream,read);
         mp_msg(MSGT_CACHE,MSGL_DBG2,"Seek done. new pos: 0x%"PRIX64"  \n",(int64_t)stream_tell(s->stream));
@@ -151,7 +131,7 @@ int cache_fill(cache_vars_t* s){
     return 0; // no fill...
   }
 
-//  printf("### read=0x%X  back=%d  newb=%d  space=%d  pos=%d\n",read,back,newb,space,pos);
+  //printf("### read=0x%X  back=%d  newb=%d  space=%d  pos=%d\n",read,back,newb,space,pos);
      
   // reduce space if needed:
   if(space>s->buffer_size-pos) space=s->buffer_size-pos;
@@ -174,6 +154,7 @@ int cache_fill(cache_vars_t* s){
   //len=stream_fill_buffer(s->stream);
   //memcpy(&s->buffer[pos],s->stream->buffer,len); // avoid this extra copy!
   // ....
+  s->stream->activeFileFlag = s->streamOriginal->activeFileFlag;
   len=stream_read(s->stream,&s->buffer[pos],space);
   if(!len) s->eof=1;
   
@@ -189,11 +170,7 @@ int cache_fill(cache_vars_t* s){
 
 cache_vars_t* cache_init(int size,int sector){
   int num;
-#ifndef WIN32
-  cache_vars_t* s=shmem_alloc(sizeof(cache_vars_t));
-#else
   cache_vars_t* s=malloc(sizeof(cache_vars_t));
-#endif
   if(s==NULL) return NULL;
   
   memset(s,0,sizeof(cache_vars_t));
@@ -203,18 +180,10 @@ cache_vars_t* cache_init(int size,int sector){
   }//32kb min_size
   s->buffer_size=num*sector;
   s->sector_size=sector;
-#ifndef WIN32
-  s->buffer=shmem_alloc(s->buffer_size);
-#else
   s->buffer=malloc(s->buffer_size);
-#endif
 
   if(s->buffer == NULL){
-#ifndef WIN32
-    shmem_free(s,sizeof(cache_vars_t));
-#else
     free(s);
-#endif
     return NULL;
   }
 
@@ -227,20 +196,16 @@ void cache_uninit(stream_t *s) {
   cache_vars_t* c = s->cache_data;
   if(!s->cache_pid) return;
 #ifndef WIN32
-  kill(s->cache_pid,SIGKILL);
-  waitpid(s->cache_pid,NULL,0);
+  c->killCacheThread = 1;
+  while(c->killCacheThread) usleep(100); // don't join or we could deadlock!
+//  pthread_join(s->cache_pid, NULL);
 #else
   TerminateThread((HANDLE)s->cache_pid,0);
-  free(c->stream);
 #endif
+  free(c->stream);
   if(!c) return;
-#ifndef WIN32
-  shmem_free(c->buffer,c->buffer_size);
-  shmem_free(s->cache_data,sizeof(cache_vars_t));
-#else
   free(c->buffer);
   free(s->cache_data);
-#endif
 }
 
 static void exit_sighandler(int x){
@@ -248,8 +213,26 @@ static void exit_sighandler(int x){
   exit(0);
 }
 
+void *threadfunc(void*s){
+fprintf(stderr,"CACHE THREAD STARTING\n");fflush(stderr);
+	// cache thread mainloop:
+#ifdef SYS_DARWIN
+  signal(SIGTERM,exit_sighandler); // kill
+#endif
+  while(!((cache_vars_t*)s)->killCacheThread){
+//fprintf(stderr,"CACHE THREAD RUNNING\n");fflush(stderr);
+    if(!cache_fill((cache_vars_t*)s)){
+	 usec_sleep(FILL_USLEEP_TIME); // idle
+    }
+//	 cache_stats(s->cache_data);
+  }
+  ((cache_vars_t*)s)->killCacheThread = 0;
+fprintf(stderr,"CACHE THREAD ENDING\n");fflush(stderr);
+//  pthread_exit(s);
+}
+
 int stream_enable_cache(stream_t *stream,int size,int min,int seek_limit){
-  int ss=(stream->type==STREAMTYPE_VCD)?VCD_SECTOR_DATA:STREAM_BUFFER_SIZE;
+  int ss=(stream->type==STREAMTYPE_VCD)?VCD_SECTOR_DATA:stream_buffer_size;
   cache_vars_t* s;
 
   if (stream->type==STREAMTYPE_STREAM && stream->fd < 0) {
@@ -261,7 +244,7 @@ int stream_enable_cache(stream_t *stream,int size,int min,int seek_limit){
   s=cache_init(size,ss);
   if(s == NULL) return 0;
   stream->cache_data=s;
-  s->stream=stream; // callback
+  s->streamOriginal=s->stream=stream; // callback
   s->seek_limit=seek_limit;
 
 
@@ -274,24 +257,35 @@ int stream_enable_cache(stream_t *stream,int size,int min,int seek_limit){
      min = s->buffer_size - s->fill_limit;
   }
   
+  // since we're doing threads instead of forking we need different memory for each of them,
+  // this is how the caching is designed to work
+  stream_t* stream2=malloc(sizeof(stream_t));
+  memcpy(stream2,s->stream,sizeof(stream_t));
+  s->stream=stream2;
 #ifndef WIN32  
-  if((stream->cache_pid=fork())){
+  pthread_attr_t attr;
+  int rc;
+  pthread_attr_init(&attr);
+  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+  if (pthread_create(&stream->cache_pid, &attr, threadfunc, s))
+	  return 0;
+  else
+  {
 #else
   {
     DWORD threadId;
-    stream_t* stream2=malloc(sizeof(stream_t));
-    memcpy(stream2,s->stream,sizeof(stream_t));
-    s->stream=stream2;
     stream->cache_pid = CreateThread(NULL,0,ThreadProc,s,0,&threadId);
 #endif
+
     // wait until cache is filled at least prefill_init %
     mp_msg(MSGT_CACHE,MSGL_V,"CACHE_PRE_INIT: %"PRId64" [%"PRId64"] %"PRId64"  pre:%d  eof:%d  \n",
 	(int64_t)s->min_filepos,(int64_t)s->read_filepos,(int64_t)s->max_filepos,min,s->eof);
     while(s->read_filepos<s->min_filepos || s->max_filepos-s->read_filepos<min){
-	mp_msg(MSGT_CACHE,MSGL_STATUS,MSGTR_CacheFill,
-	    100.0*(float)(s->max_filepos-s->read_filepos)/(float)(s->buffer_size),
-	    (int64_t)s->max_filepos-s->read_filepos
-	);
+//	mp_msg(MSGT_CACHE,MSGL_STATUS,"\rCache fill: %5.2f%% (%d bytes)    ",
+//	    100.0*(float)(s->max_filepos-s->read_filepos)/(float)(s->buffer_size),
+//	    s->max_filepos-s->read_filepos
+//	);
+	usec_sleep(50000);
 	if(s->eof) break; // file is smaller than prefill size
 	if(mp_input_check_interrupt(PREFILL_SLEEP_TIME))
 	  return 0;
@@ -300,27 +294,31 @@ int stream_enable_cache(stream_t *stream,int size,int min,int seek_limit){
     return 1; // parent exits
   }
   
-#ifdef WIN32
 }
+#ifdef WIN32
 static DWORD WINAPI ThreadProc(void*s){
-#endif
-  
-// cache thread mainloop:
-  signal(SIGTERM,exit_sighandler); // kill
-  while(1){
+fprintf(stderr,"CACHE THREAD STARTING\n");fflush(stderr);
+	// cache thread mainloop:
+//  signal(SIGTERM,exit_sighandler); // kill
+  while(!((cache_vars_t*)s)->killCacheThread){
+//fprintf(stderr,"CACHE THREAD RUNNING\n");fflush(stderr);
     if(!cache_fill((cache_vars_t*)s)){
 	 usec_sleep(FILL_USLEEP_TIME); // idle
     }
 //	 cache_stats(s->cache_data);
   }
+fprintf(stderr,"CACHE THREAD ENDING\n");fflush(stderr);
+//  pthread_exit(s);
 }
+
+#endif
 
 int cache_stream_fill_buffer(stream_t *s){
   int len;
   if(s->eof){ s->buf_pos=s->buf_len=0; return 0; }
   if(!s->cache_pid) return stream_fill_buffer(s);
 
-//  cache_stats(s->cache_data);
+  //cache_stats(s->cache_data);
 
   if(s->pos!=((cache_vars_t*)s->cache_data)->read_filepos) mp_msg(MSGT_CACHE,MSGL_ERR,"!!! read_filepos differs!!! report this bug...\n");
 

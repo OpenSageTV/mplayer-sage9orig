@@ -1,3 +1,4 @@
+#include "config.h"
 /* 
  * vo_yuv4mpeg.c, yuv4mpeg (mjpegtools) interface
  *

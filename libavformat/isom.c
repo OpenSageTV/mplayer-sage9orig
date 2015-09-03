@@ -168,6 +168,8 @@ const AVCodecTag codec_movaudio_tags[] = {
     { CODEC_ID_DVAUDIO, MKTAG('v', 'd', 'v', 'a') },
     { CODEC_ID_DVAUDIO, MKTAG('d', 'v', 'c', 'a') },
 
+    { CODEC_ID_AC3, MKTAG('s', 'a', 'c', '3') }, /* Dolby AC-3 */
+
     { CODEC_ID_NONE, 0 },
 };
 

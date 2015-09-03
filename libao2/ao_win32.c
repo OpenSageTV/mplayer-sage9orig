@@ -18,12 +18,12 @@
  *
  *****************************************************************************/
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
 #include <mmsystem.h>
 
-#include "config.h"
 #include "libaf/af_format.h"
 #include "audio_out.h"
 #include "audio_out_internal.h"

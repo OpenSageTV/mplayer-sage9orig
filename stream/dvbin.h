@@ -2,7 +2,7 @@
  *
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: dvbin.h 20677 2006-11-04 23:07:55Z nicodvb $
+ * $Id: dvbin.h,v 1.1 2007-04-10 20:11:30 Narflex Exp $
  */
 
 #ifndef DVBIN_H

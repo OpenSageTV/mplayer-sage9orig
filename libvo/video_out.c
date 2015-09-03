@@ -1,3 +1,4 @@
+#include "config.h"
 
 /* this file contains libvo's common functions, variables used by 
    many/all drivers. */
@@ -60,12 +61,26 @@ float vo_fps=0;
 char *vo_subdevice = NULL;
 int vo_directrendering=0;
 
-int vo_colorkey = 0x0000ff00; // default colorkey is green
+int vo_colorkey = 0x00000801; // default colorkey is NO LONGER green
 			      // (0xff000000 means that colorkey has been disabled)
 
 //
 // Externally visible list of all vo drivers
 //
+#ifdef HAVE_EAVIOS
+extern vo_functions_t video_out_eavios;
+#endif
+#ifdef HAVE_STV
+#ifdef WIN32
+extern vo_functions_t video_out_stvwin;
+#else
+#ifdef MACOSX
+extern vo_functions_t video_out_macstv;
+#else
+extern vo_functions_t video_out_stv;
+#endif
+#endif
+#endif
 extern vo_functions_t video_out_mga;
 extern vo_functions_t video_out_xmga;
 extern vo_functions_t video_out_x11;
@@ -174,6 +189,20 @@ vo_functions_t* video_out_drivers[] =
 #endif
 #ifdef HAVE_3DFX
         &video_out_3dfx,
+#endif
+#ifdef HAVE_EAVIOS
+	&video_out_eavios,
+#endif
+#ifdef HAVE_STV
+#ifdef WIN32
+	&video_out_stvwin,
+#else
+#ifdef MACOSX
+	&video_out_macstv,
+#else
+	&video_out_stv,
+#endif
+#endif
 #endif
 #ifdef HAVE_XV
         &video_out_xv,

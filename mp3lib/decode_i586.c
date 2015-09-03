@@ -1,7 +1,7 @@
 /*
  * Modified for use with MPlayer, for details see the changelog at
  * http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: decode_i586.c 22393 2007-03-01 12:45:00Z reimar $
+ * $Id: decode_i586.c,v 1.4 2007-04-10 19:33:31 Narflex Exp $
  */
 
 /*
@@ -27,7 +27,7 @@
 *
 * Stefan Bieschewski <stb@acm.org>
 *
-* $Id: decode_i586.c 22393 2007-03-01 12:45:00Z reimar $
+* $Id: decode_i586.c,v 1.4 2007-04-10 19:33:31 Narflex Exp $
 */
 #include "config.h"
 #include "mangle.h"

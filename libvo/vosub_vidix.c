@@ -1,3 +1,4 @@
+#include "config.h"
 /*
  *  vosub_vidix.c
  *

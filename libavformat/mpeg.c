@@ -1204,7 +1204,8 @@ static int mpeg_mux_write_packet(AVFormatContext *ctx, AVPacket *pkt)
     av_fifo_realloc(&stream->fifo, av_fifo_size(&stream->fifo) + size + 1);
 
     if (s->is_dvd){
-        if (is_iframe && (s->packet_number == 0 || (pts - stream->vobu_start_pts >= 36000))) { // min VOBU length 0.4 seconds (mpucoder)
+		// NARFLEX: SageTV, force I frame alignment if we're doing IFrame only mode since the PPC MPEG2 decoder requires that for parsing timestamps
+        if ((st->codec->codec_type == CODEC_TYPE_VIDEO && st->codec->gop_size == 0) || (is_iframe && (s->packet_number == 0 || (pts - stream->vobu_start_pts >= 36000)))) { // min VOBU length 0.4 seconds (mpucoder)
             stream->bytes_to_iframe = av_fifo_size(&stream->fifo);
             stream->align_iframe = 1;
             stream->vobu_start_pts = pts;
@@ -1301,10 +1302,11 @@ static int mpegps_probe(AVProbeData *p)
         return AVPROBE_SCORE_MAX/2+2; // +1 for .mpg
     if((priv1 || vid || audio) && (priv1+vid+audio)*9 <= pspack*10)
         return AVPROBE_SCORE_MAX/2+2; // +1 for .mpg
-    if((!!vid ^ !!audio) && (audio+vid > 1) && !sys && !pspack) /* PES stream */
+    if((!!vid ^ !!audio) && (audio+vid > 7) && !sys && !pspack) /* PES stream */
         return AVPROBE_SCORE_MAX/2+2;
 
     //02-Penguin.flac has sys:0 priv1:0 pspack:0 vid:0 audio:1
+	// NARFLEX: I've seen FLAC files with audio:2, so let's set it higher for safety
     return score;
 }
 
@@ -1337,6 +1339,14 @@ static int64_t get_pts(ByteIOContext *pb, int c)
     pts |= (int64_t)(val >> 1) << 15;
     val = get_be16(pb);
     pts |= (int64_t)(val >> 1);
+
+	if (pts > (0x200000000LL - 30LL*90000LL))
+	{
+		// NARFLEX: This is in here to deal with MPEG2 files I keep running into that start with timestamps
+		// that are just about to rollover at 2^33 at the start of the file
+		// (a half second of audio usually at the start before it rolls over, and the video starts at zero)
+		pts = pts - 0x200000000LL;
+	}
     return pts;
 }
 
@@ -1562,7 +1572,10 @@ static int mpegps_read_pes_header(AVFormatContext *s,
     else if( c!= 0xf )
         goto redo;
 
-    if (startcode == PRIVATE_STREAM_1 && !m->psm_es_type[startcode & 0xff]) {
+	// NARFLEX - I have no idea why they don't strip off the audio header junk
+	// if there's a PSM. I guess they assume then those headers aren't there; but that
+	// don't work for our PSMs
+    if (startcode == PRIVATE_STREAM_1/* && !m->psm_es_type[startcode & 0xff]*/) {
         startcode = get_byte(&s->pb);
         len--;
         if (startcode >= 0x80 && startcode <= 0xcf) {

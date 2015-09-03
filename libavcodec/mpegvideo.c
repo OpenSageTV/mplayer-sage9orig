@@ -218,6 +218,32 @@ void ff_init_scantable(uint8_t *permutation, ScanTable *st, const uint8_t *src_s
     }
 }
 
+/**
+ * gets the qmin & qmax for pict_type
+ */
+static void get_qminmax(int *qmin_ret, int *qmax_ret, MpegEncContext *s, int pict_type){
+    int qmin= s->avctx->lmin;
+    int qmax= s->avctx->lmax;
+
+    assert(qmin <= qmax);
+
+    if(pict_type==B_TYPE){
+        qmin= (int)(qmin*FFABS(s->avctx->b_quant_factor)+s->avctx->b_quant_offset + 0.5);
+        qmax= (int)(qmax*FFABS(s->avctx->b_quant_factor)+s->avctx->b_quant_offset + 0.5);
+    }else if(pict_type==I_TYPE){
+        qmin= (int)(qmin*FFABS(s->avctx->i_quant_factor)+s->avctx->i_quant_offset + 0.5);
+        qmax= (int)(qmax*FFABS(s->avctx->i_quant_factor)+s->avctx->i_quant_offset + 0.5);
+    }
+
+    qmin= av_clip(qmin, 1, FF_LAMBDA_MAX);
+    qmax= av_clip(qmax, 1, FF_LAMBDA_MAX);
+
+    if(qmax<qmin) qmax= qmin;
+
+    *qmin_ret= qmin;
+    *qmax_ret= qmax;
+}
+
 #ifdef CONFIG_ENCODERS
 void ff_write_quant_matrix(PutBitContext *pb, uint16_t *matrix){
     int i;
@@ -1388,7 +1414,7 @@ int MPV_encode_init(AVCodecContext *avctx)
                        s->inter_matrix, s->inter_quant_bias, avctx->qmin, 31, 0);
     }
 
-    if(ff_rate_control_init(s) < 0)
+    if(ff_rate_control_init(s, 0) < 0)
         return -1;
 
     return 0;
@@ -1583,6 +1609,7 @@ alloc:
         s->current_picture_ptr= (Picture*)pic;
         s->current_picture_ptr->top_field_first= s->top_field_first; //FIXME use only the vars from current_pic
         s->current_picture_ptr->interlaced_frame= !s->progressive_frame && !s->progressive_sequence;
+		avctx->interlaced = s->current_picture_ptr->interlaced_frame;
     }
 
     s->current_picture_ptr->pict_type= s->pict_type;
@@ -1628,6 +1655,31 @@ alloc:
 
     s->hurry_up= s->avctx->hurry_up;
     s->error_resilience= avctx->error_resilience;
+
+	/* Update the MPEG encoding bitrate in case it's being dynamically adjusted */
+	if (s->encoding && s->bit_rate != avctx->bit_rate)
+	{
+		// Not sure if we want to set the max rate now or along w/ the bitrate
+		if (s->current_picture_ptr->key_frame)
+		{
+			int old_rate = avctx->bit_rate;
+			// Scale the initial complexity to match the new bitrate
+	//		avctx->rc_initial_cplx = avctx->rc_initial_cplx * avctx->bit_rate / s->bit_rate;
+			avctx->rc_max_rate = avctx->bit_rate;
+			s->bit_rate = avctx->bit_rate;
+	 	    if(ff_rate_control_init(s, old_rate) < 0)
+			        return -1;
+		}
+/*		else if (avctx->bit_rate > 4*s->bit_rate/3) // More than 33% increases in bitrate can handle a new keyframe on the bitrate increase
+		{
+			s->pict_type = I_TYPE;
+			// Scale the initial complexity to match the new bitrate
+			avctx->rc_initial_cplx = avctx->rc_initial_cplx * avctx->bit_rate / s->bit_rate;
+			s->bit_rate = avctx->bit_rate;
+		    if(ff_rate_control_init(s, 1) < 0)
+		        return -1;
+		}*/
+	}
 
     /* set dequantizer, we can't do it during init as it might change for mpeg4
        and we can't do it in the header decode as init isnt called for mpeg4 there yet */
@@ -2094,7 +2146,6 @@ static int load_input_picture(MpegEncContext *s, AVFrame *pic_arg){
 
     if(pic_arg){
         pts= pic_arg->pts;
-        pic_arg->display_picture_number= s->input_picture_number++;
 
         if(pts != AV_NOPTS_VALUE){
             if(s->user_specified_pts != AV_NOPTS_VALUE){
@@ -2113,9 +2164,10 @@ static int load_input_picture(MpegEncContext *s, AVFrame *pic_arg){
                 pts= s->user_specified_pts + 1;
                 av_log(s->avctx, AV_LOG_INFO, "Warning: AVFrame.pts=? trying to guess (%"PRId64")\n", pts);
             }else{
-                pts= pic_arg->display_picture_number;
+                pts= s->input_picture_number + 1;
             }
         }
+        pic_arg->display_picture_number= s->input_picture_number++;
     }
 
   if(pic_arg){
@@ -2161,10 +2213,11 @@ static int load_input_picture(MpegEncContext *s, AVFrame *pic_arg){
                 int w= s->width >>h_shift;
                 int h= s->height>>v_shift;
                 uint8_t *src= pic_arg->data[i];
-                uint8_t *dst= pic->data[i];
+                uint8_t *dst= pic->data[i] + INPLACE_OFFSET;
 
-                if(!s->avctx->rc_buffer_size)
-                    dst +=INPLACE_OFFSET;
+// NARFLEX: Disable this block and add above instead like they used to, it's causing FFMPEG to crash on placeshifter transcoding
+//                if(!s->avctx->rc_buffer_size)
+  //                  dst +=INPLACE_OFFSET;
 
                 if(src_stride==dst_stride)
                     memcpy(dst, src, src_stride*h);
@@ -2462,7 +2515,8 @@ no_output_pic:
 
         copy_picture(&s->new_picture, s->reordered_input_picture[0]);
 
-        if(s->reordered_input_picture[0]->type == FF_BUFFER_TYPE_SHARED || s->avctx->rc_buffer_size){
+		// NARFLEX: Disable this secondary if block, it's causing FFMPEG to crash on placeshifter transcoding
+        if(s->reordered_input_picture[0]->type == FF_BUFFER_TYPE_SHARED/* || s->avctx->rc_buffer_size*/){
             // input is a shared pix, so we can't modifiy it -> alloc a new one & ensure that the shared one is reuseable
 
             int i= ff_find_unused_picture(s, 0);
@@ -2524,7 +2578,6 @@ int MPV_encode_picture(AVCodecContext *avctx,
         return -1;
 
     select_input_picture(s);
-
     /* output? */
     if(s->new_picture.data[0]){
         s->pict_type= s->new_picture.pict_type;
@@ -2549,8 +2602,8 @@ vbv_retry:
 
         if (s->out_format == FMT_MJPEG)
             mjpeg_picture_trailer(s);
-
-        if(avctx->rc_buffer_size){
+// NARFLEX: Disable this block, it's causing FFMPEG to crash on placeshifter transcoding
+/*        if(avctx->rc_buffer_size){
             RateControlContext *rcc= &s->rc_context;
             int max_size= rcc->buffer_index/3;
 
@@ -2579,7 +2632,7 @@ vbv_retry:
             }
 
             assert(s->avctx->rc_max_rate);
-        }
+        }*/
 
         if(s->flags&CODEC_FLAG_PASS1)
             ff_write_pass1_stats(s);
@@ -2641,6 +2694,8 @@ vbv_retry:
         }
         s->total_bits += s->frame_bits;
         avctx->frame_bits  = s->frame_bits;
+// This can be used to get stats on the size of each video frame encoded
+//av_log(s->avctx, AV_LOG_QUIET, "%c frame bytes=%d\n", av_get_pict_type_char(s->pict_type), (int)s->frame_bits);
     }else{
         assert((pbBufPtr(&s->pb) == s->pb.buf));
         s->frame_bits=0;
@@ -5564,14 +5619,37 @@ static void merge_context_after_encode(MpegEncContext *dst, MpegEncContext *src)
     flush_put_bits(&dst->pb);
 }
 
+// NARFLEX: Doing dynamic adjustment of q based on bitrate has turned out to give pretty poor
+// results. It's better to count on buffering to smooth out higher frequency changes in the stream and
+// just use the overall rate as the target like we've been doing. That should be the most visually
+// pleasing as well.
 static int estimate_qp(MpegEncContext *s, int dry_run){
-    if (s->next_lambda){
+/*    if (s->next_lambda){
         s->current_picture_ptr->quality=
         s->current_picture.quality = s->next_lambda;
         if(!dry_run) s->next_lambda= 0;
-    } else if (!s->fixed_qscale) {
-        s->current_picture_ptr->quality=
+    } else */if (!s->fixed_qscale) {
         s->current_picture.quality = ff_rate_estimate_qscale(s, dry_run);
+/*		if (s->avctx->bit_rate < s->bit_rate)
+		{
+			// If it's a decrease in bitrate then raise Q proportionately until we do the change at the keyframe.
+			// Do the opposite as well.
+			int qmin, qmax;
+			const int pict_type= s->pict_type;
+
+			get_qminmax(&qmin, &qmax, s, pict_type);
+
+			float newQ = s->current_picture_ptr->quality;
+			newQ = ((float)s->bit_rate / s->avctx->bit_rate) * newQ;
+			if (newQ < qmin)
+				newQ = qmin;
+			else if (newQ > qmax)
+				newQ = qmax;
+	        s->current_picture_ptr->quality=
+		    s->current_picture.quality = newQ;
+		}
+/*		else
+			s->current_picture_ptr->quality = s->current_picture.quality;*/
         if (s->current_picture.quality < 0)
             return -1;
     }
@@ -6947,3 +7025,4 @@ AVCodec mjpeg_encoder = {
 };
 
 #endif //CONFIG_ENCODERS
+

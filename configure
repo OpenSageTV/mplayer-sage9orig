@@ -123,7 +123,7 @@ beos()    { issystem "BEOS"    ; return "$?" ; }
 # x86/x86pc is used by QNX
 x86_32() {
   case "$host_arch" in
-    i[3-9]86|x86|x86pc|k5|k6|k6-2|k6-3|pentium*|athlon*|i586-i686) return 0 ;;
+    i[3-9]86|x86|x86pc|k5|k6|k6-2|k6-3|pentium*|athlon*|i586-i686|prescott) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -141,7 +141,7 @@ x86() {
 
 ppc() {
   case "$host_arch" in
-    ppc) return 0;;
+    ppc*) return 0;;
     *) return 1;;
   esac
 }
@@ -648,6 +648,10 @@ _color_console=no
 _stream_cache=yes
 _def_stream_cache="#define USE_STREAM_CACHE 1"
 _need_shmem=yes
+_eavios=no
+_stv=no
+_stream_sagetv=no
+_mingw_64bit_file_offset=no
 for ac_option do
   case "$ac_option" in
   --help|-help|-h)
@@ -806,6 +810,12 @@ for ac_option do
   --disable-gif)	_gif=no		;;
   --enable-gl)		_gl=yes		;;
   --disable-gl)		_gl=no		;;
+  --enable-eavios)		_eavios=yes		;;
+  --disable-eavios)		_eavios=no		;;
+  --enable-stv)		_stv=yes		;;
+  --disable-stv)		_stv=no		;;
+  --enable-stream-sagetv)	_stream_sagetv=yes	;;
+  --disable-stream-sagetv)	_stream_sagetv=no	;;
   --enable-ggi)		_ggi=yes	;;
   --disable-ggi)	_ggi=no		;;
   --enable-ggiwmh)	_ggiwmh=yes	;;
@@ -1087,6 +1097,9 @@ for ac_option do
 
   --enable-qtx) _qtx=yes ;;
   --disable-qtx) _qtx=no ;;
+
+  --enable-mingw-64bit-file-offset) _mingw_64bit_file_offset=yes ;;
+  --disable-mingw-64bit-file-offset) _mingw_64bit_file_offset=no ;;
 
   --enable-macosx) _macosx=yes ;;
   --disable-macosx) _macosx=no ;;
@@ -1486,7 +1499,7 @@ elif aix; then
 elif x86; then
   # all other OSes try to extract CPU information from a small helper
   # program TOOLS/cpuinfo instead
-  $_cc -o TOOLS/cpuinfo TOOLS/cpuinfo.c
+  test -f TOOLS/cpuinfo || $_cc -o TOOLS/cpuinfo TOOLS/cpuinfo.c
   _cpuinfo="TOOLS/cpuinfo"
 fi
 
@@ -1576,7 +1589,7 @@ EOF
 fi
 
 case "$host_arch" in
-  i[3-9]86|x86|x86pc|k5|k6|k6-2|k6-3|pentium*|athlon*|i586-i686)
+  i[3-9]86|x86|x86pc|k5|k6|k6-2|k6-3|pentium*|athlon*|i586-i686|prescott)
   _def_arch_x86="#define ARCH_X86 1"
   _target_arch_x86="TARGET_ARCH_X86 = yes"
   _def_arch="#define ARCH_X86_32 1"
@@ -1640,6 +1653,8 @@ case "$host_arch" in
     6) iproc=686
 	if test "$pmodel" -eq 15; then
 		proc=core2
+	elif test "$pmodel" -eq 14; then
+		proc=prescott
 	elif test "$pmodel" -eq 9 -o "$pmodel" -ge 13; then
 		proc=pentium-m
 	elif test "$pmodel" -ge 7; then
@@ -1947,7 +1962,7 @@ EOF
     _optimizing=''
     ;;
 
-  ppc)
+  ppc*)
     _def_arch='#define ARCH_POWERPC 1'
     _def_dcbzl='#define NO_DCBZL 1'
     _target_arch='TARGET_ARCH_POWERPC = yes'
@@ -1995,6 +2010,10 @@ EOF
         echores "$proc"
     fi
 
+    # override autodetected CPU type with specified type
+    fooproc=`echo $host_arch | sed s/ppc//g`
+    test -n fooproc && proc=$fooproc
+    
     echocheck "GCC & CPU optimization abilities"
 
     if test -n "$proc"; then
@@ -2705,6 +2724,7 @@ if test "$_posix4" = yes ; then
 fi
 echores "$_posix4"
 
+
 echocheck "lrintf"
 cat > $TMPC << EOF
 #include <math.h>
@@ -3061,7 +3081,7 @@ if not hpux ; then
     # for crosscompilation, we cannot execute the program, be happy if we can link statically
     cc_check $_ld_tmp && (tmp_run || test "$_ld_static") && _ld_pthread="$_ld_tmp" && _pthreads=yes && break
   done
-fi
+  fi
 fi
 if test "$_pthreads" = yes ; then
   _res_comment="using $_ld_pthread"
@@ -3821,7 +3841,7 @@ dfb_version() {
 }
 
 if test "$_directfb" = yes; then
-  cat > $TMPC << EOF
+cat > $TMPC <<EOF
 #include <directfb_version.h>
 int
 dfb_ver = DIRECTFB_MAJOR_VERSION.DIRECTFB_MINOR_VERSION.DIRECTFB_MICRO_VERSION
@@ -4979,7 +4999,7 @@ EOF
     _inc_extra="$_inc_extra "`$_pkg_config --cflags jack`""
   else
     _jack=no
-  fi
+fi
 fi
 
 if test "$_jack" = yes ; then
@@ -5317,7 +5337,7 @@ EOF
       cc_check $_inc_tmp -lcdda_interface -lcdda_paranoia $_ld_lm && \
         _cdparanoia=yes && _inc_extra="$_inc_extra $_inc_tmp" && break
     done
-fi
+    fi
 if test "$_cdparanoia" = yes ; then
     _cdda='yes'
     _ld_extra="$_ld_extra -lcdda_interface -lcdda_paranoia"
@@ -5590,7 +5610,7 @@ echores "$_zlib"
 
 
 echocheck "RTC"
-if test "$_rtc" = auto ; then
+  if test "$_rtc" = auto ; then
   cat > $TMPC << EOF
 #include <sys/ioctl.h>
 #ifdef __linux__
@@ -5604,7 +5624,7 @@ EOF
   _rtc=no
   cc_check && _rtc=yes
   ppc && _rtc=no
-fi
+  fi
 if test "$_rtc" = yes ; then
   _def_rtc='#define HAVE_RTC 1'
 else
@@ -5695,7 +5715,7 @@ fi
 if test "$_toolamedir" ; then
   _res_comment="using $_toolamedir"
 fi
-echores "$_toolame"
+  echores "$_toolame"
 
 echocheck "OggVorbis support"
 if test "$_tremor_internal" = yes; then
@@ -6181,7 +6201,7 @@ EOF
         _res_comment=""
       fi
     fi
-  fi
+fi
 fi
 echores "$_libavcodec"
 
@@ -6366,6 +6386,13 @@ else
 fi
 echores "$_md5sum"
 
+echocheck "MingW 64-bit file offsets"
+_def_mingw_64bit_file_offset='#undef MINGW_64BIT_FILE_OFFSET'
+if test "$_mingw_64bit_file_offset" = yes ; then
+  _def_mingw_64bit_file_offset='#define MINGW_64BIT_FILE_OFFSET'
+fi
+echores "$_mingw_64bit_file_offset"
+
 echocheck "AMR narrowband"
 if test "$_amr_nb" = auto ; then
   _amr_nb=no
@@ -6494,6 +6521,42 @@ else
 fi
 echores "$_bl"
 
+
+echocheck "eavios"
+if test "$_eavios" != no ; then
+        _def_eavios='#define HAVE_EAVIOS 1'
+	_vosrc="$_vosrc vo_eavios.c"
+	_voobj="$_voobj vo_eavios.o"
+        _vomodules="eavios $_vomodules"
+else
+        _def_eavios='#undef HAVE_EAVIOS'
+        _novomodules="eavios $_novomodules"
+	_vosrc="$_vosrc"
+	_voobj="$_voobj"
+fi
+echores "$_eavios"
+
+echocheck "stv"
+if test "$_stv" != no ; then
+        _def_eavios='#define HAVE_STV 1'
+	if win32 ; then
+		_vosrc="$_vosrc vo_stvwin.c"
+		_voobj="$_voobj vo_stvwin.o"
+	elif darwin ; then
+		_vosrc="$_vosrc vo_macstv.c vo_macstv_user.c"
+		_voobj="$_voobj vo_macstv.o vo_macstv_user.o"
+	else
+		_vosrc="$_vosrc vo_stv.c"
+		_voobj="$_voobj vo_stv.o"
+	fi
+        _vomodules="stv $_vomodules"
+else
+        _def_eavios='#undef HAVE_STV'
+        _novomodules="stv $_novomodules"
+	_vosrc="$_vosrc"
+	_voobj="$_voobj"
+fi
+echores "$_stv"
 
 echocheck "XviD"
 if test "$_xvid" = auto ; then
@@ -6883,6 +6946,16 @@ else
 fi
 echores "$_ftp"
 
+echocheck "stream SageTV"
+if test "$_stream_sagetv" != no ; then
+  _def_stream_sagetv='#define STREAM_SAGETV 1'
+  _inputmodules="stream_sagetv $_inputmodules"
+else
+  _noinputmodules="stream_sagetv $_noinputmodules"
+  _def_stream_sagetv='#undef STREAM_SAGETV'
+fi
+echores "$_stream_sagetv"
+
 echocheck "vstream client"
 if test "$_vstream" = auto ; then
   _vstream=no
@@ -7254,7 +7327,7 @@ echores "$_vidix_external"
 
 if test "$_vidix_internal" = yes || test "$_vidix_external" = yes ; then
   _vidix=yes
-  _def_vidix='#define CONFIG_VIDIX 1'
+_def_vidix='#define CONFIG_VIDIX 1'
 else
   _vidix=no
   _def_vidix='#undef CONFIG_VIDIX'
@@ -7842,6 +7915,17 @@ $_def_soundcard
 /* Define this if your system has the sysinfo header */
 $_def_sys_sysinfo
 
+/* Define this when compiling under MINGW so 64-bit file offsets are used */
+/* Prevent libavcodec from using this define since it handles 64-bit offsets correctly */
+#ifndef COMMON_H
+$_def_mingw_64bit_file_offset
+#ifdef MINGW_64BIT_FILE_OFFSET
+#define _OFF_T_
+typedef long _off_t;
+typedef long long off_t;
+#endif
+#endif
+
 /* Define this if your system has ftello() */
 
 $_def_ftello
@@ -8288,6 +8372,9 @@ $_def_network
 /* enable ftp support */
 $_def_ftp
 
+/* enable SageTV streaming support */
+$_def_stream_sagetv
+
 /* enable vstream support */
 $_def_vstream
 
@@ -8395,6 +8482,8 @@ $_def_caca
 $_def_tga
 $_def_toolame
 $_def_twolame
+$_def_eavios
+$_def_stv
 
 /* used by GUI: */
 $_def_xshape

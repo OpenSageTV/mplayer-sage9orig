@@ -6,7 +6,7 @@
  *
  */
 
-
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,7 +15,6 @@
 #include <sys/types.h>
 #include <dirent.h>
 
-#include "config.h"
 #include "mp_msg.h"
 #include "subreader.h"
 #include "stream/stream.h"

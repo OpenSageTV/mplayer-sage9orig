@@ -1,10 +1,10 @@
+#include "config.h"
 
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "pullup.h"
-#include "config.h"
 #include "cpudetect.h"
 
 

@@ -22,7 +22,7 @@
 ** Commercial non-GPL licensing of this software is possible.
 ** For more info contact Ahead Software through Mpeg4AAClicense@nero.com.
 **
-** $Id: faad.h,v 1.47 2004/04/03 19:08:37 menno Exp $
+** $Id: faad.h,v 1.2 2005-11-02 17:46:27 Narflex Exp $
 **/
 
 /* warn people for update */

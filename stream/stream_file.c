@@ -10,8 +10,12 @@
 #include "mp_msg.h"
 #include "stream.h"
 #include "help_mp.h"
+#include "input/input.h"
 #include "m_option.h"
 #include "m_struct.h"
+
+#define NUM_LOOKS_FOR_DATA 100
+#define WAIT_BETWEEN_LOOKS 50
 
 static struct stream_priv_s {
   char* filename;
@@ -19,6 +23,8 @@ static struct stream_priv_s {
 } stream_priv_dflts = {
   NULL, NULL
 };
+
+extern mp_cmd_t* mp_input_get_cmd(int time, int paused, int peek_only);
 
 #define ST_OFF(f) M_ST_OFF(struct stream_priv_s,f)
 /// URL definition
@@ -35,7 +41,34 @@ static struct m_struct_st stream_opts = {
 };  
 
 static int fill_buffer(stream_t *s, char* buffer, int max_len){
-  int r = read(s->fd,buffer,max_len);
+  int r = 0,curr=0;
+  int numLooks = 0;
+  mp_cmd_t* cmd;
+  while (1 /*&& numLooks < NUM_LOOKS_FOR_DATA*/) // Let it loop forever if the file is still maked as an active file since it could be a transcoding pause
+  {
+	  curr = read(s->fd,buffer,max_len);
+	  if (curr >= 0)
+		  r += curr;
+	  else
+		  r = curr;
+	  if (curr == max_len || r < 0 || !s->activeFileFlag)
+		  break;
+	  // Check for an update in the inactive file status, or a load file request
+	  // But this is NOT THREAD SAFE!!!
+//	  cmd = mp_input_get_cmd(0, 0, 1);
+//	  if (cmd->id == MP_CMD_INACTIVE_FILE || cmd->id == MP_CMD_LOADFILE2)
+//		  break;
+//fprintf(stderr, "WAITING FOR DATA to appear in the file...looks=%d len=%d pos=%d\n", numLooks, max_len, (int)s->pos);
+//fflush(stderr);
+      max_len -= curr;
+	  buffer += curr;
+#ifndef WIN32	  
+	  usleep(WAIT_BETWEEN_LOOKS * 1000);
+#else
+	  usec_sleep(WAIT_BETWEEN_LOOKS * 1000);
+#endif
+	  numLooks++;
+  }
   return (r <= 0) ? -1 : r;
 }
 
@@ -46,7 +79,11 @@ static int write_buffer(stream_t *s, char* buffer, int len) {
 
 static int seek(stream_t *s,off_t newpos) {
   s->pos = newpos;
+#if defined(CONFIG_WIN32) && !defined(__CYGWIN__) 
+	if(_lseeki64(s->fd,s->pos,SEEK_SET)<0) {
+#else
   if(lseek(s->fd,s->pos,SEEK_SET)<0) {
+#endif
     s->eof=1;
     return 0;
   }
@@ -59,7 +96,7 @@ static int seek_forward(stream_t *s,off_t newpos) {
     return 0;
   }
   while(s->pos<newpos){
-    int len=s->fill_buffer(s,s->buffer,STREAM_BUFFER_SIZE);
+    int len=s->fill_buffer(s,s->buffer,stream_buffer_size);
     if(len<=0){ s->eof=1; s->buf_pos=s->buf_len=0; break; } // EOF
     s->buf_pos=0;
     s->buf_len=len;
@@ -82,6 +119,21 @@ static int control(stream_t *s, int cmd, void *arg) {
     }
   }
   return STREAM_UNSUPORTED;
+}
+
+static off_t size(stream_t *stream, off_t *availSize)
+{
+	struct stat fileStats;
+	memset(&fileStats, 0, sizeof(fileStats));
+	if (!fstat(stream->fd, &fileStats))
+	{
+//		printf("File size is %lld\n", fileStats.st_size);
+		if (availSize)
+			*availSize = fileStats.st_size;
+		return fileStats.st_size;
+	}
+	else
+		return 0;
 }
 
 static int open_f(stream_t *stream,int mode, void* opts, int* file_format) {
@@ -149,12 +201,19 @@ static int open_f(stream_t *stream,int mode, void* opts, int* file_format) {
     }
   }
 
+#if defined(CONFIG_WIN32) && !defined(__CYGWIN__) 
+    len=_lseeki64(f,0,SEEK_END); _lseeki64(f,0,SEEK_SET);
+#else
   len=lseek(f,0,SEEK_END); lseek(f,0,SEEK_SET);
+#endif
+	
 #ifdef __MINGW32__
   if(f==0 || len == -1) {
 #else
   if(len == -1) {
 #endif
+fprintf(stderr, "FAILED seeking to end of file, using it as a stream\n");
+fflush(stderr);
     if(mode == STREAM_READ) stream->seek = seek_forward;
     stream->type = STREAMTYPE_STREAM; // Must be move to STREAMTYPE_FILE
     stream->flags |= STREAM_SEEK_FW;
@@ -167,6 +226,7 @@ static int open_f(stream_t *stream,int mode, void* opts, int* file_format) {
   mp_msg(MSGT_OPEN,MSGL_V,"[file] File size is %"PRId64" bytes\n", (int64_t)len);
 
   stream->fd = f;
+  stream->size = size;
   stream->fill_buffer = fill_buffer;
   stream->write_buffer = write_buffer;
   stream->control = control;

@@ -22,14 +22,13 @@
 */
 
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
 #define DIRECTSOUND_VERSION 0x0600
 #include <dsound.h>
-#include <math.h>
 
-#include "config.h"
 #include "libaf/af_format.h"
 #include "audio_out.h"
 #include "audio_out_internal.h"
@@ -121,6 +120,7 @@ static int min_free_space = 0;            ///if the free space is below this val
                                           ///will be replaced with nBlockAlign in init()
 static int device_num = 0;                ///wanted device number
 static GUID device;                       ///guid of the device 
+static HANDLE underflowThreadTracker = 0;     ///thread that watches for buffer underflow
 
 /***************************************************************************************/
 
@@ -390,19 +390,48 @@ static int control(int cmd, void *arg)
 		case AOCONTROL_GET_VOLUME: {
 			ao_control_vol_t* vol = (ao_control_vol_t*)arg;
 			IDirectSoundBuffer_GetVolume(hdsbuf, &volume);
-			vol->left = vol->right = pow(10.0, (float)(volume+10000) / 5000.0);
+			vol->left = vol->right = (float)(volume+10000) / 100.0;
 			//printf("ao_dsound: volume: %f\n",vol->left);
 			return CONTROL_OK;
 		}
 		case AOCONTROL_SET_VOLUME: {
 			ao_control_vol_t* vol = (ao_control_vol_t*)arg;
-			volume = (DWORD)(log10(vol->right) * 5000.0) - 10000;
+			volume = (vol->right * 100.0)-10000;
 			IDirectSoundBuffer_SetVolume(hdsbuf, volume);
 			//printf("ao_dsound: volume: %f\n",vol->left);
 			return CONTROL_OK;
 		}
 	}
 	return -1;
+}
+
+static DWORD WINAPI ThreadProc(void*s){
+printf("UNDERFLOW MONITOR THREAD STARTING\n");fflush(stdout);
+int lastWriteOffset = 0;
+float lastDelay = 1;
+float maxDelay = 0;
+int alreadyStopped = 0;
+while (hdsbuf) // when this is gone, we're done!
+{
+		usec_sleep(50000); // idle
+		float currDelay = get_delay();
+		if (currDelay > maxDelay)
+			maxDelay = currDelay;
+		int currWriteOffset = write_offset;
+		if (!alreadyStopped && lastWriteOffset == currWriteOffset && currDelay < maxDelay/2)//currDelay > lastDelay)
+		{
+			// Buffer has wrapped
+			printf("DSound: Stopping audio to prevent looping...\n");fflush(stdout);
+			IDirectSoundBuffer_Stop(hdsbuf);
+			alreadyStopped = 1;
+		}
+		if (currWriteOffset != lastWriteOffset)
+			alreadyStopped = 0;
+		lastWriteOffset = currWriteOffset;
+		lastDelay = currDelay;
+//		printf("\r\nDELAY=%f\r\n", get_delay());fflush(stdout);
+}
+printf("UNDERFLOW MONITOR THREAD ENDING\n");fflush(stdout);
 }
 
 /** 
@@ -518,6 +547,11 @@ static int init(int rate, int channels, int format, int flags)
 		}
 	}
 	mp_msg(MSGT_AO, MSGL_V, "ao_dsound: secondary (stream)buffer created\n");
+
+	// Create another thread to monitor this one and pause playback of the sound if we hit underflow to prevent looping
+    DWORD threadId;
+    underflowThreadTracker = CreateThread(NULL,0,ThreadProc,NULL,0,&threadId);
+	
 	return 1;
 }
 

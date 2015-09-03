@@ -26,7 +26,8 @@
 #define STREAMTYPE_MF 18
 #define STREAMTYPE_RADIO 19
 
-#define STREAM_BUFFER_SIZE 2048
+#define STREAM_BUFFER_SIZE 65536
+extern int stream_buffer_size;
 
 #define VCD_SECTOR_SIZE 2352
 #define VCD_SECTOR_OFFS 24
@@ -94,6 +95,8 @@ typedef struct stream_st {
   int (*control)(struct stream_st *s,int cmd,void* arg);
   // Close
   void (*close)(struct stream_st *s);
+  // Size - returns total size of the stream
+  off_t (*size)(struct stream_st *s, off_t* availSize);
 
   int fd;   // file descriptor, see man open(2)
   int type; // see STREAMTYPE_*
@@ -103,10 +106,12 @@ typedef struct stream_st {
   off_t pos,start_pos,end_pos;
   int eof;
   int mode; //STREAM_READ or STREAM_WRITE
-  unsigned int cache_pid;
+  unsigned long cache_pid;
   void* cache_data;
   void* priv; // used for DVD, TV, RTSP etc
   char* url;  // strdup() of filename/url
+  int activeFileFlag;
+  off_t circularFileSize;
 #ifdef MPLAYER_NETWORK
   streaming_ctrl_t *streaming_ctrl;
 #endif
@@ -114,6 +119,30 @@ typedef struct stream_st {
 } stream_t;
 
 #ifdef USE_STREAM_CACHE
+typedef struct {
+  // constats:
+  unsigned char *buffer;      // base pointer of the alllocated buffer memory
+  int buffer_size; // size of the alllocated buffer memory
+  int sector_size; // size of a single sector (2048/2324)
+  int back_size;   // we should keep back_size amount of old bytes for backward seek
+  int fill_limit;  // we should fill buffer only if space>=fill_limit
+  int seek_limit;	   // we should fill min prefill bytes if cache gets empty
+  // filler's pointers:
+  int eof;
+  off_t min_filepos; // buffer contain only a part of the file, from min-max pos
+  off_t max_filepos;
+  off_t offset;      // filepos <-> bufferpos  offset value (filepos of the buffer's first byte)
+  // reader's pointers:
+  off_t read_filepos;
+  // commands/locking:
+//  int seek_lock;   // 1 if we will seek/reset buffer, 2 if we are ready for cmd
+//  int fifo_flag;  // 1 if we should use FIFO to notice cache about buffer reads.
+  // callback
+  stream_t* stream;
+  stream_t* streamOriginal;
+  int killCacheThread;
+} cache_vars_t;
+
 int stream_enable_cache(stream_t *stream,int size,int min,int prefill);
 int cache_stream_fill_buffer(stream_t *s);
 int cache_stream_seek_long(stream_t *s,off_t pos);
@@ -272,7 +301,7 @@ inline static int stream_seek(stream_t *s,off_t pos){
 }
 
 inline static int stream_skip(stream_t *s,off_t len){
-  if( (len<0 && (s->flags & STREAM_SEEK_BW)) || (len>2*STREAM_BUFFER_SIZE && (s->flags & STREAM_SEEK_FW)) ) {
+  if( (len<0 && (s->flags & STREAM_SEEK_BW)) || (len>2*stream_buffer_size && (s->flags & STREAM_SEEK_FW)) ) {
     // negative or big skip!
     return stream_seek(s,stream_tell(s)+len);
   }

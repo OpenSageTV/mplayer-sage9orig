@@ -1,7 +1,7 @@
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "config.h"
 
 #ifdef HAVE_LIBDL
 #include <dlfcn.h>

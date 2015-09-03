@@ -8,7 +8,7 @@
  *
  * Modified for use with MPlayer, changes contained in liba52_changes.diff.
  * detailed changelog at http://svn.mplayerhq.hu/mplayer/trunk/
- * $Id: a52_internal.h 18786 2006-06-22 13:34:00Z diego $
+ * $Id: a52_internal.h,v 1.4 2007-04-10 19:33:08 Narflex Exp $
  *
  * a52dec is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

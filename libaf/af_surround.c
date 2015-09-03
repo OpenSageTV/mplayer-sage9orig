@@ -1,3 +1,4 @@
+#include "config.h"
 /* 
    This is an libaf filter to do simple decoding of matrixed surround
    sound.  This will provide a (basic) surround-sound effect from

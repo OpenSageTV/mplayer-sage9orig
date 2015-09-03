@@ -155,7 +155,7 @@ CPPOBJS-$(CONFIG_AUDIO_BEOS)             += beosaudio.o
 # protocols I/O
 OBJS+= avio.o aviobuf.o
 
-OBJS-$(CONFIG_PROTOCOLS)                 += file.o
+OBJS-$(CONFIG_PROTOCOLS)                 += file.o stv.o
 OBJS-$(CONFIG_NETWORK)                   += udp.o tcp.o http.o rtsp.o rtp.o \
                                             rtpproto.o mpegts.o rtp_h264.o
 

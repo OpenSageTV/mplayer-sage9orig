@@ -1,3 +1,4 @@
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -311,6 +312,7 @@ int init_audio_filters(sh_audio_t *sh_audio,
 
   // filter config:  
   memcpy(&afs->cfg,&af_cfg,sizeof(af_cfg_t));
+  afs->chan_map = sh_audio->chan_map;
   
   mp_msg(MSGT_DECAUDIO, MSGL_V, MSGTR_BuildingAudioFilterChain,
       afs->input.rate,afs->input.nch,af_fmt2str_short(afs->input.format),
