@@ -1,0 +1,693 @@
+MPlayer dev-SVN-rUNKNOWN-3.2.3 (C) 2000-2007 MPlayer Team
+CPU: Intel(R) Pentium(R) 4 CPU 3.00GHz (Family: 15, Model: 3, Stepping: 3)
+CPUflags:  MMX: 1 MMX2: 1 3DNow: 0 3DNow2: 0 SSE: 0 SSE2: 0
+Compiled with runtime CPU detection.
+this_opt = option: cache
+Checking cache=2048
+Config pushed level is now 2
+Config pushed level is now 3
+Setting cache=2048
+get_path('codecs.conf') -> 'C:/msys/1.0/home/Narflex/mplayer/codecs.conf'
+Reading C:/msys/1.0/home/Narflex/mplayer/codecs.conf: Can't open 'C:/msys/1.0/home/Narflex/mplayer/codecs.conf': No such file or directory
+Reading /usr/local/etc/mplayer/codecs.conf: Can't open '/usr/local/etc/mplayer/codecs.conf': No such file or directory
+Using built-in default codecs.conf.
+Configuration: --disable-vidix-internal --disable-vidix-external --disable-mencoder --disable-gl --enable-runtime-cpudetection --enable-static --enable-largefiles --disable-langinfo --disable-tv --disable-dvdread --disable-dvdread-internal --disable-freetype --disable-fontconfig --disable-unrarlib --disable-menu --disable-libdvdcss-internal
+CommandLine: 'Y:\TestContent\AllFormats\Video\MPEG-2 PS 480i\deinterlacetest.mpg' '-v' '-v' '-cache' '2048'
+get_path('font/font.desc') -> 'C:/msys/1.0/home/Narflex/mplayer/font/font.desc'
+font: can't open file: C:/msys/1.0/home/Narflex/mplayer/font/font.desc
+font: can't open file: /usr/local/share/mplayer/font/font.desc
+Using MMX (with tiny bit MMX2) Optimized OnScreenDisplay
+Using Windows native timing
+get_path('input.conf') -> 'C:/msys/1.0/home/Narflex/mplayer/input.conf'
+Can't open input config file C:/msys/1.0/home/Narflex/mplayer/input.conf: No such file or directory
+Can't open input config file /usr/local/etc/mplayer/input.conf: No such file or directory
+Falling back on default (hardcoded) input config
+get_path('Y:\TestContent\AllFormats\Video\MPEG-2 PS 480i\deinterlacetest.mpg.conf') -> 'C:/msys/1.0/home/Narflex/mplayer/Y:\TestContent\AllFormats\Video\MPEG-2 PS 480i\deinterlacetest.mpg.conf'
+getch2: 6 can't get number of input events  [disabling console input]
+
+[[[init getch2]]]
+
+Playing Y:\TestContent\AllFormats\Video\MPEG-2 PS 480i\deinterlacetest.mpg.
+get_path('sub/') -> 'C:/msys/1.0/home/Narflex/mplayer/sub/'
+WINSOCK2 init: 0
+[file] File size is 129177536 bytes
+STREAM: [file] Y:\TestContent\AllFormats\Video\MPEG-2 PS 480i\deinterlacetest.mpg
+STREAM: Description: File
+STREAM: Author: Albeu
+STREAM: Comment: based on the code from ??? (probably Arpi)
+CACHE_PRE_INIT: 0 [0] 0  pre:419430  eof:0  
+Cache fill:  0.00% (0 bytes)   Cache fill:  0.00% (0 bytes)   Cache fill:  0.00% (0 bytes)   
+CACHE2_SEEK: 0x0 <= 0x11000000000000 (0xBB99C0003DBCE8) <= 0x134836000BB99C0  
+DEMUXER: freeing demuxer at 003DBCE8
+Checking for YUV4MPEG2
+DEMUXER: freeing demuxer at 003DBCE8
+ASF_check: not ASF guid!
+DEMUXER: freeing demuxer at 003DBCE8
+Checking for NuppelVideo
+DEMUXER: freeing demuxer at 003DBCE8
+Checking for REAL
+DEMUXER: freeing demuxer at 003DBCE8
+Checking for SMJPEG
+DEMUXER: freeing demuxer at 003DBCE8
+[mkv] no head found
+DEMUXER: freeing demuxer at 003DBCE8
+DEMUXER: freeing demuxer at 003DBCE8
+DEMUXER: freeing demuxer at 003DBCE8
+Ogg demuxer : Bad page sync
+DEMUXER: freeing demuxer at 003DBCE8
+Searching demuxer type for filename Y:\TestContent\AllFormats\Video\MPEG-2 PS 480i\deinterlacetest.mpg ext: .mpg
+CACHE2_SEEK: 0x0 <= 0x13800000001000 (0xBBABD000BBABD0) <= 0x3DBCE8FFFFF800  
+Checking for Nullsoft Streaming Video
+DEMUXER: freeing demuxer at 003DBCE8
+CACHE2_SEEK: 0x0 <= 0x1380000003E800 (0xBBB6B000BBB6B0) <= 0x3DBCE8FFFC2000  
+Checking for MOV
+DEMUXER: freeing demuxer at 003DBCE8
+Checking for VIVO
+header block 1 size: 0
+DEMUXER: freeing demuxer at 003DBCE8
+DEMUXER: freeing demuxer at 003DBCE8
+DEMUXER: freeing demuxer at 003DBCE8
+DEMUXER: freeing demuxer at 003DBCE8
+DEMUXER: freeing demuxer at 003DBCE8
+AVS: avs_check_file - attempting to open file Y:\TestContent\AllFormats\Video\MPEG-2 PS 480i\deinterlacetest.mpg
+AVS: File is too big, aborting...
+DEMUXER: freeing demuxer at 003DBCE8
+Checking for PVA
+Failed: PVA
+DEMUXER: freeing demuxer at 003DBCE8
+Checking for MPEG-TS...
+GET_PACKET_SIZE, pos 1, char: a4
+GET_PACKET_SIZE, pos 1, char: a4
+GET_PACKET_SIZE, pos 1, char:  4
+GET_PACKET_SIZE, pos 1, char:  4
+GET_PACKET_SIZE, pos 1, char: 1c
+GET_PACKET_SIZE, pos 1, char: 1c
+GET_PACKET_SIZE, pos 1, char: 7e
+GET_PACKET_SIZE, pos 1, char: 7e
+GET_PACKET_SIZE, pos 1, char: 2a
+GET_PACKET_SIZE, pos 1, char: 2a
+GET_PACKET_SIZE, pos 1, char: 4f
+GET_PACKET_SIZE, pos 1, char: 4f
+GET_PACKET_SIZE, pos 1, char:  1
+GET_PACKET_SIZE, pos 1, char:  1
+GET_PACKET_SIZE, pos 1, char: ae
+GET_PACKET_SIZE, pos 1, char: ae
+GET_PACKET_SIZE, pos 1, char: ed
+GET_PACKET_SIZE, pos 1, char: ed
+GET_PACKET_SIZE, pos 1, char:  0
+GET_PACKET_SIZE, pos 1, char:  0
+GET_PACKET_SIZE, pos 1, char: 80
+GET_PACKET_SIZE, pos 1, char: 80
+TRIED UP TO POSITION 70113, FOUND 47, packet_size= 0, SEEMS A TS? 0
+CACHE2_SEEK: 0x111E100000000 <= 0x14000000013000 (0xFFFFE9E100000000) <= 0x800000111E1  
+DEMUXER: freeing demuxer at 003DBCE8
+CACHE2_SEEK: 0x0 <= 0x14000000011800 (0xBBB89000BBB890) <= 0x3DBCE8FFFEF000  
+Checking for LMLM4 Stream Format
+typ: 442 chan: 0 size: 1140851704 pad: 0
+Invalid packet in LMLM4 stream: ch=0 size=1140851704
+LMLM4 Stream Format not found
+DEMUXER: freeing demuxer at 003DBCE8
+system stream synced at 0xD (13)!
+==> Found video stream: 0
+==> Found audio stream: 0
+CACHE2_SEEK: 0x3D98BE000000000 <= 0x14000000015800 (0x3DCD98003DA9B8) <= 0x3D98BE000000000  
+Out of boundaries... seeking to 0x3D98800  
+s->pos=142000  newpos=3D98800  new_bufpos=3D98800  buflen=0  
+Seek done. new pos: 0x3D98800  
+CACHE2_SEEK: 0x7AB76A003D98800 <= 0x3DB680003DA7000 (0x3DCD98003DA9B8) <= 0x7AB76A000000000  
+Out of boundaries... seeking to 0x7AB7000  
+s->pos=3DB8800  newpos=7AB7000  new_bufpos=7AB7000  buflen=0  
+Seek done. new pos: 0x7AB7000  
+invalid sampling_frequency
+CACHE2_SEEK: 0x80007AB7000 <= 0x7ADF00007ACA800 (0xF8536800003DBCE8) <= 0x800003DA9B8  
+Out of boundaries... seeking to 0x800  
+s->pos=7AE1000  newpos=800  new_bufpos=800  buflen=0  
+Seek done. new pos: 0x800  
+CACHE2_SEEK: 0x800 <= 0x15280000001800 (0x80000000000) <= 0xFFFFF00000000000  
+Out of boundaries... seeking to 0x0  
+s->pos=154800  newpos=0  new_bufpos=0  buflen=0  
+Seek done. new pos: 0x0  
+MPEG-PS file format detected.
+Searching for sequence header... OK!
+VIDEO:  MPEG2  720x480  (aspect 2)  29.970 fps  8000.0 kbps (1000.0 kbyte/s)
+[V] filefmt:2  fourcc:0x10000002  size:720x480  fps:29.97  ftime:=0.0334
+get_path('sub/') -> 'C:/msys/1.0/home/Narflex/mplayer/sub/'
+<vo_directx><INFO>Initing DirectDraw
+<vo_directx><INFO>DirectDraw Inited
+<vo_directx><INFO>initial mplayer windows created
+<vo_directx><INFO>checking primary surface
+<vo_directx><INFO>primary surface created
+<vo_directx><FORMAT PRIMARY>14 BGR32 supported
+<vo_directx><INFO>testing supported overlay pixelformats
+<vo_directx><FORMAT OVERLAY>0 YV12  supported
+<vo_directx><FORMAT OVERLAY>1 I420  not supported
+<vo_directx><FORMAT OVERLAY>2 IYUV  not supported
+<vo_directx><FORMAT OVERLAY>3 YVU9  supported
+<vo_directx><FORMAT OVERLAY>4 YUY2  supported
+<vo_directx><FORMAT OVERLAY>5 UYVY  supported
+<vo_directx><FORMAT OVERLAY>6 BGR8  not supported
+<vo_directx><FORMAT OVERLAY>7 RGB15 not supported
+<vo_directx><FORMAT OVERLAY>8 BGR15 not supported
+<vo_directx><FORMAT OVERLAY>9 RGB16 not supported
+<vo_directx><FORMAT OVERLAY>10 BGR16 not supported
+<vo_directx><FORMAT OVERLAY>11 RGB24 not supported
+<vo_directx><FORMAT OVERLAY>12 BGR24 not supported
+<vo_directx><FORMAT OVERLAY>13 RGB32 not supported
+<vo_directx><FORMAT OVERLAY>14 BGR32 not supported
+<vo_directx><INFO>Your card supports 4 of 15 overlayformats
+<vo_directx><INFO>can mirror up down
+<vo_directx><INFO>hardware supports overlay
+<vo_directx><INFO>preinit succesfully finished
+==========================================================================
+Opening video decoder: [mpegpes] MPEG 1/2 Video passthrough
+VDec: vo config request - 720 x 480 (preferred colorspace: Mpeg PES)
+Trying filter chain: vo
+vo_debug: query(Mpeg PES) returned 0x0 (i=0) 
+Could not find matching colorspace - retrying with -vf scale...
+Opening video filter: [scale]
+SwScale params: -1 x -1 (-1=no scaling)
+Trying filter chain: scale vo
+vo_debug: query(Mpeg PES) returned 0x0 (i=0) 
+VDecoder init failed :(
+Opening video decoder: [libmpeg2] MPEG 1/2 Video decoder libmpeg2-v0.4.0b
+Selected video codec: [mpeg12] vfm: libmpeg2 (MPEG-1 or 2 (libmpeg2))
+==========================================================================
+==========================================================================
+Opening audio decoder: [mp3lib] MPEG layer-2, layer-3
+dec_audio: Allocating 4608 + 65536 = 70144 bytes for output buffer.
+mp3lib: made decode tables with MMX optimization
+mp3lib: using MMX optimized decore!
+MP3lib: init layer2&3 finished, tables done
+MPEG 1.0, Layer II, 48000 Hz 384 kbit Stereo, BPF: 1152
+Channels: 2, copyright: No, original: No, CRC: No, emphasis: 0
+AUDIO: 48000 Hz, 2 ch, s16le, 384.0 kbit/25.00% (ratio: 48000->192000)
+Selected audio codec: [mp3] afm: mp3lib (mp3lib MPEG layer-2, layer-3)
+==========================================================================
+Building audio filter chain for 48000Hz/2ch/s16le -> 0Hz/0ch/??...
+[libaf] Adding filter dummy 
+[dummy] Was reinitialized: 48000Hz/2ch/s16le
+[dummy] Was reinitialized: 48000Hz/2ch/s16le
+ao_dsound: Output Devices:
+0 Primary Sound Driver <--
+1 SoundMAX Digital Audio 
+ao_dsound: DirectSound initialized
+ao_dsound: Samplerate:48000Hz Channels:2 Format:s16le
+ao_dsound: Buffersize:192000 bytes (1000 msec)
+ao_dsound: primary buffer created
+ao_dsound: secondary (stream)buffer created
+AO: [dsound] 48000Hz 2ch s16le (2 bytes per sample)
+AO: Description: Windows DirectSound audio output
+AO: Author: Gabor Szecsi <deje@miki.hu>
+Building audio filter chain for 48000Hz/2ch/s16le -> 48000Hz/2ch/s16le...
+[dummy] Was reinitialized: 48000Hz/2ch/s16le
+[dummy] Was reinitialized: 48000Hz/2ch/s16le
+Starting playback...
+
+decaudio: minlen=65536 maxlen=192000 declen=65536 (max=70144)
+decaudio: decoding 60928 bytes, max: 65536 (4608)
+decaudio: decoding 56320 bytes, max: 60928 (4608)
+decaudio: decoding 51712 bytes, max: 56320 (4608)
+decaudio: decoding 47104 bytes, max: 51712 (4608)
+decaudio: decoding 42496 bytes, max: 47104 (4608)
+decaudio: decoding 37888 bytes, max: 42496 (4608)
+decaudio: decoding 33280 bytes, max: 37888 (4608)
+decaudio: decoding 28672 bytes, max: 33280 (4608)
+decaudio: decoding 24064 bytes, max: 28672 (4608)
+decaudio: decoding 19456 bytes, max: 24064 (4608)
+decaudio: decoding 14848 bytes, max: 19456 (4608)
+decaudio: decoding 10240 bytes, max: 14848 (4608)
+decaudio: decoding 5632 bytes, max: 10240 (4608)
+decaudio: decoding 1024 bytes, max: 5632 (4608)
+decaudio: declen=65536 out=65536 (max 192000)
+
+decaudio: minlen=65536 maxlen=192000 declen=65536 (max=70144)
+decaudio: decoding 61952 bytes, max: 66560 (4608)
+decaudio: decoding 57344 bytes, max: 61952 (4608)
+decaudio: decoding 52736 bytes, max: 57344 (4608)
+decaudio: decoding 48128 bytes, max: 52736 (4608)
+decaudio: decoding 43520 bytes, max: 48128 (4608)
+decaudio: decoding 38912 bytes, max: 43520 (4608)
+decaudio: decoding 34304 bytes, max: 38912 (4608)
+decaudio: decoding 29696 bytes, max: 34304 (4608)
+decaudio: decoding 25088 bytes, max: 29696 (4608)
+decaudio: decoding 20480 bytes, max: 25088 (4608)
+decaudio: decoding 15872 bytes, max: 20480 (4608)
+decaudio: decoding 11264 bytes, max: 15872 (4608)
+decaudio: decoding 6656 bytes, max: 11264 (4608)
+decaudio: decoding 2048 bytes, max: 6656 (4608)
+decaudio: declen=65536 out=65536 (max 192000)
+
+decaudio: minlen=60924 maxlen=192000 declen=60924 (max=70144)
+decaudio: decoding 58364 bytes, max: 67584 (4608)
+decaudio: decoding 53756 bytes, max: 62976 (4608)
+decaudio: decoding 49148 bytes, max: 58368 (4608)
+decaudio: decoding 44540 bytes, max: 53760 (4608)
+decaudio: decoding 39932 bytes, max: 49152 (4608)
+decaudio: decoding 35324 bytes, max: 44544 (4608)
+decaudio: decoding 30716 bytes, max: 39936 (4608)
+decaudio: decoding 26108 bytes, max: 35328 (4608)
+decaudio: decoding 21500 bytes, max: 30720 (4608)
+decaudio: decoding 16892 bytes, max: 26112 (4608)
+decaudio: decoding 12284 bytes, max: 21504 (4608)
+decaudio: decoding 7676 bytes, max: 16896 (4608)
+decaudio: decoding 3068 bytes, max: 12288 (4608)
+decaudio: declen=60924 out=60924 (max 192000)
+ telecine = 1.0  -2.500     
+VDec: vo config request - 720 x 480 (preferred colorspace: Planar YV12)
+Trying filter chain: vo
+vo_debug: query(Planar YV12) returned 0x417 (i=0) 
+VDec: using Planar YV12 as output csp (no 0)
+Movie-Aspect is 1.33:1 - prescaling to correct movie aspect.
+VO Config (720x480->720x540,flags=0,'MPlayer',0x32315659)
+VO: [directx] 720x480 => 720x540 Planar YV12 
+VO: Description: Directx DDraw YUV/RGB/BGR renderer
+VO: Author: Sascha Sommer <saschasommer@freenet.de>
+<vo_directx><INFO>overlay surfaces released
+<vo_directx><INFO>primary surface created
+<vo_directx><INFO>overlay with format YV12  created
+*** [vo] Allocating mp_image_t, 720x480x12bpp YUV planar, 518400 bytes
+(imgfmt: 32315659, planes: 02C40020,02CA97A0,02C94620 strides: 720,360,360, chroma: 360x240, shift: h:1,v:1)
+A:   0.4 V:   0.0 A-V:  0.341 ct:  0.000   1/  1 ??% ??% ??,?% 0 0 48%         
+decaudio: minlen=12840 maxlen=190468 declen=12840 (max=70144)
+decaudio: decoding 11300 bytes, max: 68604 (4608)
+decaudio: decoding 6692 bytes, max: 63996 (4608)
+decaudio: decoding 2084 bytes, max: 59388 (4608)
+decaudio: declen=12840 out=12840 (max 190468)
+ telecine = 1.0  -2.500     
+*** [vo] Allocating mp_image_t, 720x480x12bpp YUV planar, 518400 bytes
+(imgfmt: 32315659, planes: 02D00020,02D697A0,02D54620 strides: 720,360,360, chroma: 360x240, shift: h:1,v:1)
+A:   0.4 V:   0.3 A-V:  0.032 ct: -0.000   2/  2 ??% ??% ??,?% 0 0 46%         
+decaudio: minlen=728 maxlen=191964 declen=728 (max=70144)
+decaudio: declen=728 out=728 (max 191964)
+ telecine = 1.0  -2.500     
+OSD chg: 3  V: no  pb:-1  
+OSD chg: 2  V: no  pb:-1  
+A:   0.4 V:   0.4 A-V:  0.001 ct: -0.001   3/  3 ??% ??% ??,?% 0 0 46%         
+decaudio: minlen=312 maxlen=191236 declen=312 (max=70144)
+decaudio: declen=312 out=312 (max 191236)
+ telecine = 1.0  -2.500     
+A:   0.4 V:   0.4 A-V: -0.001 ct: -0.002   4/  4 ??% ??% ??,?% 0 0 46%         
+decaudio: minlen=6016 maxlen=190924 declen=6016 (max=70144)
+decaudio: decoding 4532 bytes, max: 68660 (4608)
+decaudio: declen=6016 out=6016 (max 190924)
+ telecine = 1.0  -2.500     
+*** [vo] Allocating mp_image_t, 720x480x12bpp YUV planar, 518400 bytes
+(imgfmt: 32315659, planes: 02EB0020,02F197A0,02F04620 strides: 720,360,360, chroma: 360x240, shift: h:1,v:1)
+A:   0.4 V:   0.4 A-V: -0.005 ct: -0.003   5/  5 ??% ??% ??,?% 0 0 47%         
+decaudio: minlen=4640 maxlen=191052 declen=4640 (max=70144)
+decaudio: decoding 4564 bytes, max: 70068 (4608)
+decaudio: declen=4640 out=4640 (max 191052)
+ telecine = 1.0  -2.500     
+A:   0.5 V:   0.5 A-V:  0.009 ct: -0.003   6/  6 ??% ??% ??,?% 0 0 47%         
+decaudio: minlen=8976 maxlen=190508 declen=8976 (max=70144)
+decaudio: decoding 8932 bytes, max: 70100 (4608)
+decaudio: decoding 4324 bytes, max: 65492 (4608)
+decaudio: declen=8976 out=8976 (max 190508)
+ telecine = 1.0  -2.500     
+A:   0.5 V:   0.5 A-V:  0.013 ct: -0.002   7/  7 ??% ??% ??,?% 0 0 47%         
+decaudio: minlen=6136 maxlen=191772 declen=6136 (max=70144)
+decaudio: decoding 5852 bytes, max: 69860 (4608)
+decaudio: decoding 1244 bytes, max: 65252 (4608)
+decaudio: declen=6136 out=6136 (max 191772)
+ telecine = 1.0  -2.500     
+A:   0.5 V:   0.5 A-V: -0.002 ct: -0.003   8/  8 ??% ??% ??,?% 0 0 45%         
+decaudio: minlen=5868 maxlen=191780 declen=5868 (max=70144)
+decaudio: decoding 2504 bytes, max: 66780 (4608)
+decaudio: declen=5868 out=5868 (max 191780)
+ telecine = 1.0  -2.500     
+A:   0.6 V:   0.6 A-V: -0.004 ct: -0.004   9/  9 ??% ??% ??,?% 0 0 45%         
+decaudio: minlen=5996 maxlen=190008 declen=5996 (max=70144)
+decaudio: decoding 3892 bytes, max: 68040 (4608)
+decaudio: declen=5996 out=5996 (max 190008)
+ telecine = 1.0  -2.500     
+A:   0.6 V:   0.6 A-V:  0.000 ct: -0.004  10/ 10 ??% ??% ??,?% 0 0 46%         
+decaudio: minlen=5980 maxlen=190156 declen=5980 (max=70144)
+decaudio: decoding 5264 bytes, max: 69428 (4608)
+decaudio: decoding 656 bytes, max: 64820 (4608)
+decaudio: declen=5980 out=5980 (max 190156)
+ telecine = 1.0  -2.500     
+A:   0.7 V:   0.6 A-V:  0.020 ct: -0.004  11/ 11 ??% ??% ??,?% 0 0 47%         
+decaudio: minlen=9008 maxlen=190320 declen=9008 (max=70144)
+decaudio: decoding 5056 bytes, max: 66192 (4608)
+decaudio: decoding 448 bytes, max: 61584 (4608)
+decaudio: declen=9008 out=9008 (max 190320)
+ telecine = 1.0  -2.500     
+A:   0.7 V:   0.7 A-V: -0.001 ct: -0.005  12/ 12 ??% ??% ??,?% 0 0 47%         
+decaudio: minlen=5968 maxlen=191552 declen=5968 (max=70144)
+decaudio: decoding 1808 bytes, max: 65984 (4608)
+decaudio: declen=5968 out=5968 (max 191552)
+ telecine = 1.0  -2.500     
+A:   0.7 V:   0.7 A-V:  0.003 ct: -0.005  13/ 13 ??% ??% ??,?% 0 0 45%         
+decaudio: minlen=6004 maxlen=191728 declen=6004 (max=70144)
+decaudio: decoding 3204 bytes, max: 67344 (4608)
+decaudio: declen=6004 out=6004 (max 191728)
+ telecine = 1.0  -2.500     
+A:   0.7 V:   0.7 A-V:  0.001 ct: -0.006  14/ 14 ??% ??% ??,?% 0 0 45%         
+decaudio: minlen=5992 maxlen=191868 declen=5992 (max=70144)
+decaudio: decoding 4588 bytes, max: 68740 (4608)
+decaudio: declen=5992 out=5992 (max 191868)
+ telecine = 1.0  -2.500     
+A:   0.8 V:   0.8 A-V:  0.005 ct: -0.006  15/ 15 ??% ??% ??,?% 0 0 48%         
+decaudio: minlen=6008 maxlen=189972 declen=6008 (max=70144)
+decaudio: decoding 5988 bytes, max: 70124 (4608)
+decaudio: decoding 1380 bytes, max: 65516 (4608)
+decaudio: declen=6008 out=6008 (max 189972)
+ telecine = 1.0  -2.500     
+A:   0.8 V:   0.8 A-V:  0.009 ct: -0.005  16/ 16  9%  0%  3.2% 0 0 47%         
+decaudio: minlen=6000 maxlen=190108 declen=6000 (max=70144)
+decaudio: decoding 2772 bytes, max: 66916 (4608)
+decaudio: declen=6000 out=6000 (max 190108)
+ telecine = 1.0  -2.500     
+A:   0.9 V:   0.8 A-V:  0.022 ct: -0.004  17/ 17  8%  0%  3.0% 0 0 47%         
+decaudio: minlen=8996 maxlen=190252 declen=8996 (max=70144)
+decaudio: decoding 7160 bytes, max: 68308 (4608)
+decaudio: decoding 2552 bytes, max: 63700 (4608)
+decaudio: declen=8996 out=8996 (max 190252)
+ telecine = 1.0  -2.500     
+A:   0.9 V:   0.9 A-V:  0.009 ct: -0.005  18/ 18  8%  0%  2.8% 0 0 45%         
+decaudio: minlen=6104 maxlen=191496 declen=6104 (max=70144)
+decaudio: decoding 4048 bytes, max: 68088 (4608)
+decaudio: declen=6104 out=6104 (max 191496)
+ telecine = 1.0  -2.500     
+A:   0.9 V:   0.9 A-V:  0.006 ct: -0.005  19/ 19  7%  0%  2.7% 0 0 45%         
+decaudio: minlen=5900 maxlen=191536 declen=5900 (max=70144)
+decaudio: decoding 5340 bytes, max: 69584 (4608)
+decaudio: decoding 732 bytes, max: 64976 (4608)
+decaudio: declen=5900 out=5900 (max 191536)
+ telecine = 1.0  -2.500     
+A:   0.9 V:   0.9 A-V:  0.010 ct: -0.005  20/ 20  7%  0%  2.5% 0 0 47%         
+decaudio: minlen=6036 maxlen=191780 declen=6036 (max=70144)
+decaudio: decoding 2160 bytes, max: 66268 (4608)
+decaudio: declen=6036 out=6036 (max 191780)
+ telecine = 1.0  -2.500     
+A:   1.0 V:   1.0 A-V:  0.014 ct: -0.004  21/ 21  6%  0%  2.4% 0 0 47%         
+decaudio: minlen=5968 maxlen=191888 declen=5968 (max=70144)
+decaudio: decoding 3520 bytes, max: 67696 (4608)
+decaudio: declen=5968 out=5968 (max 191888)
+ telecine = 1.0  -2.500     
+A:   1.0 V:   1.0 A-V:  0.012 ct: -0.004  22/ 22  6%  0%  2.3% 0 0 47%         
+decaudio: minlen=6036 maxlen=190016 declen=6036 (max=70144)
+decaudio: decoding 4948 bytes, max: 69056 (4608)
+decaudio: decoding 340 bytes, max: 64448 (4608)
+decaudio: declen=6036 out=6036 (max 190016)
+ telecine = 1.0  -2.500     
+A:   1.0 V:   1.0 A-V: -0.002 ct: -0.004  23/ 23  6%  0%  2.2% 0 0 45%         
+decaudio: minlen=6008 maxlen=190124 declen=6008 (max=70144)
+decaudio: decoding 1740 bytes, max: 65876 (4608)
+decaudio: declen=6008 out=6008 (max 190124)
+ telecine = 1.0  -2.500     
+A:   1.1 V:   1.1 A-V: -0.004 ct: -0.005  24/ 24  5%  0%  2.1% 0 0 45%         
+decaudio: minlen=5996 maxlen=190260 declen=5996 (max=70144)
+decaudio: decoding 3128 bytes, max: 67276 (4608)
+decaudio: declen=5996 out=5996 (max 190260)
+ telecine = 1.0  -2.500     
+A:   1.1 V:   1.1 A-V:  0.015 ct: -0.005  25/ 25  5%  0%  2.0% 0 0 46%         
+decaudio: minlen=8956 maxlen=190408 declen=8956 (max=70144)
+decaudio: decoding 7476 bytes, max: 68664 (4608)
+decaudio: decoding 2868 bytes, max: 64056 (4608)
+decaudio: declen=8956 out=8956 (max 190408)
+ telecine = 1.0  -2.500     
+A:   1.2 V:   1.1 A-V:  0.019 ct: -0.004  26/ 26  5%  0%  1.9% 0 0 46%         
+decaudio: minlen=6008 maxlen=191692 declen=6008 (max=70144)
+decaudio: decoding 4268 bytes, max: 68404 (4608)
+decaudio: declen=6008 out=6008 (max 191692)
+ telecine = 1.0  -2.500     
+A:   1.2 V:   1.2 A-V:  0.017 ct: -0.003  27/ 27  5%  0%  1.8% 0 0 46%         
+decaudio: minlen=5988 maxlen=191828 declen=5988 (max=70144)
+decaudio: decoding 5648 bytes, max: 69804 (4608)
+decaudio: decoding 1040 bytes, max: 65196 (4608)
+decaudio: declen=5988 out=5988 (max 191828)
+ telecine = 1.0  -2.500     
+A:   1.2 V:   1.2 A-V:  0.003 ct: -0.004  28/ 28  5%  0%  1.8% 0 0 45%         
+decaudio: minlen=6040 maxlen=191984 declen=6040 (max=70144)
+decaudio: decoding 2472 bytes, max: 66576 (4608)
+decaudio: declen=6040 out=6040 (max 191984)
+ telecine = 1.0  -2.500     
+A:   1.2 V:   1.2 A-V:  0.001 ct: -0.005  29/ 29  4%  0%  1.7% 0 0 45%         
+decaudio: minlen=5956 maxlen=190040 declen=5956 (max=70144)
+decaudio: decoding 3820 bytes, max: 68008 (4608)
+decaudio: declen=5956 out=5956 (max 190040)
+ telecine = 1.0  -2.500     
+A:   1.3 V:   1.3 A-V:  0.005 ct: -0.004  30/ 30  4%  0%  1.7% 0 0 47%         
+decaudio: minlen=6012 maxlen=190228 declen=6012 (max=70144)
+decaudio: decoding 5224 bytes, max: 69356 (4608)
+decaudio: decoding 616 bytes, max: 64748 (4608)
+decaudio: declen=6012 out=6012 (max 190228)
+ telecine = 1.0  -2.500     
+A:   1.3 V:   1.3 A-V:  0.008 ct: -0.004  31/ 31  4%  0%  1.6% 0 0 47%         
+decaudio: minlen=5996 maxlen=190360 declen=5996 (max=70144)
+decaudio: decoding 2004 bytes, max: 66152 (4608)
+decaudio: declen=5996 out=5996 (max 190360)
+ telecine = 1.0  -2.500     
+A:   1.3 V:   1.3 A-V:  0.006 ct: -0.003  32/ 32  4%  0%  1.5% 0 0 47%         
+decaudio: minlen=6000 maxlen=190508 declen=6000 (max=70144)
+decaudio: decoding 3396 bytes, max: 67540 (4608)
+decaudio: declen=6000 out=6000 (max 190508)
+ telecine = 1.0  -2.500     
+A:   1.4 V:   1.4 A-V:  0.002 ct: -0.004  33/ 33  4%  0%  1.5% 0 0 47%         
+decaudio: minlen=9032 maxlen=190652 declen=9032 (max=70144)
+decaudio: decoding 7820 bytes, max: 68932 (4608)
+decaudio: decoding 3212 bytes, max: 64324 (4608)
+decaudio: declen=9032 out=9032 (max 190652)
+ telecine = 1.0  -2.500     
+A:   1.4 V:   1.4 A-V:  0.006 ct: -0.005  34/ 34  4%  0%  1.5% 0 0 45%         
+decaudio: minlen=5964 maxlen=191860 declen=5964 (max=70144)
+decaudio: decoding 4568 bytes, max: 68748 (4608)
+decaudio: declen=5964 out=5964 (max 191860)
+ telecine = 1.0  -2.500     
+A:   1.4 V:   1.4 A-V:  0.010 ct: -0.005  35/ 35  4%  0%  1.4% 0 0 47%         
+decaudio: minlen=6036 maxlen=189992 declen=6036 (max=70144)
+decaudio: decoding 5996 bytes, max: 70104 (4608)
+decaudio: decoding 1388 bytes, max: 65496 (4608)
+decaudio: declen=6036 out=6036 (max 189992)
+ telecine = 1.0  -2.500     
+A:   1.5 V:   1.5 A-V:  0.014 ct: -0.004  36/ 36  3%  0%  1.4% 0 0 47%         
+decaudio: minlen=6004 maxlen=190100 declen=6004 (max=70144)
+decaudio: decoding 2784 bytes, max: 66924 (4608)
+decaudio: declen=6004 out=6004 (max 190100)
+ telecine = 1.0  -2.500     
+A:   1.5 V:   1.5 A-V:  0.012 ct: -0.004  37/ 37  3%  0%  1.3% 0 0 47%         
+decaudio: minlen=5996 maxlen=190240 declen=5996 (max=70144)
+decaudio: decoding 4172 bytes, max: 68320 (4608)
+decaudio: declen=5996 out=5996 (max 190240)
+ telecine = 1.0  -2.500     
+A:   1.5 V:   1.5 A-V: -0.009 ct: -0.005  38/ 38  3%  0%  1.3% 0 0 47%         
+decaudio: minlen=5968 maxlen=190388 declen=5968 (max=70144)
+decaudio: decoding 5532 bytes, max: 69708 (4608)
+decaudio: decoding 924 bytes, max: 65100 (4608)
+decaudio: declen=5968 out=5968 (max 190388)
+ telecine = 1.0  -2.500     
+A:   1.6 V:   1.6 A-V: -0.004 ct: -0.005  39/ 39  3%  0%  1.3% 0 0 46%         
+decaudio: minlen=6080 maxlen=190564 declen=6080 (max=70144)
+decaudio: decoding 2396 bytes, max: 66460 (4608)
+decaudio: declen=6080 out=6080 (max 190564)
+ telecine = 1.0  -2.500     
+A:   1.6 V:   1.6 A-V:  0.015 ct: -0.005  40/ 40  3%  0%  1.2% 0 0 46%         
+decaudio: minlen=8912 maxlen=190628 declen=8912 (max=70144)
+decaudio: decoding 6700 bytes, max: 67932 (4608)
+decaudio: decoding 2092 bytes, max: 63324 (4608)
+decaudio: declen=8912 out=8912 (max 190628)
+ telecine = 1.0  -2.500     
+A:   1.7 V:   1.6 A-V:  0.019 ct: -0.004  41/ 41  3%  0%  1.2% 0 0 47%         
+decaudio: minlen=6064 maxlen=191956 declen=6064 (max=70144)
+decaudio: decoding 3548 bytes, max: 67628 (4608)
+decaudio: declen=6064 out=6064 (max 191956)
+ telecine = 1.0  -2.500     
+A:   1.7 V:   1.7 A-V:  0.016 ct: -0.004  42/ 42  3%  0%  1.2% 0 0 47%         
+decaudio: minlen=5932 maxlen=189988 declen=5932 (max=70144)
+decaudio: decoding 4872 bytes, max: 69084 (4608)
+decaudio: decoding 264 bytes, max: 64476 (4608)
+decaudio: declen=5932 out=5932 (max 189988)
+ telecine = 1.0  -2.500     
+A:   1.7 V:   1.7 A-V:  0.002 ct: -0.005  43/ 43  3%  0%  1.1% 0 0 46%         
+decaudio: minlen=6008 maxlen=190200 declen=6008 (max=70144)
+decaudio: decoding 1664 bytes, max: 65800 (4608)
+decaudio: declen=6008 out=6008 (max 190200)
+ telecine = 1.0  -2.500     
+A:   1.7 V:   1.7 A-V:  0.000 ct: -0.005  44/ 44  3%  0%  1.1% 0 0 46%         
+decaudio: minlen=6048 maxlen=190336 declen=6048 (max=70144)
+decaudio: decoding 3104 bytes, max: 67200 (4608)
+decaudio: declen=6048 out=6048 (max 190336)
+ telecine = 1.0  -2.500     
+A:   1.8 V:   1.8 A-V:  0.004 ct: -0.005  45/ 45  3%  0%  1.1% 0 0 47%         
+decaudio: minlen=5952 maxlen=190432 declen=5952 (max=70144)
+decaudio: decoding 4448 bytes, max: 68640 (4608)
+decaudio: declen=5952 out=5952 (max 190432)
+ telecine = 1.0  -2.500     
+A:   1.8 V:   1.8 A-V:  0.002 ct: -0.005  46/ 46  3%  0%  1.1% 0 0 47%         
+decaudio: minlen=6084 maxlen=190624 declen=6084 (max=70144)
+decaudio: decoding 5924 bytes, max: 69984 (4608)
+decaudio: decoding 1316 bytes, max: 65376 (4608)
+decaudio: declen=6084 out=6084 (max 190624)
+ telecine = 1.0  -2.500     
+A:   1.9 V:   1.8 A-V:  0.021 ct: -0.004  47/ 47  2%  0%  1.0% 0 0 47%         
+decaudio: minlen=8916 maxlen=190684 declen=8916 (max=70144)
+decaudio: decoding 5624 bytes, max: 66852 (4608)
+decaudio: decoding 1016 bytes, max: 62244 (4608)
+decaudio: declen=8916 out=8916 (max 190684)
+ telecine = 1.0  -2.500     
+A:   1.9 V:   1.9 A-V:  0.007 ct: -0.005  48/ 48  2%  0%  1.0% 0 0 46%         
+decaudio: minlen=5996 maxlen=189960 declen=5996 (max=70144)
+decaudio: decoding 2404 bytes, max: 66552 (4608)
+decaudio: declen=5996 out=5996 (max 189960)
+ telecine = 1.0  -2.500     
+A:   1.9 V:   1.9 A-V:  0.005 ct: -0.005  49/ 49  2%  0%  1.0% 0 0 46%         
+decaudio: minlen=6040 maxlen=190108 declen=6040 (max=70144)
+decaudio: decoding 3836 bytes, max: 67940 (4608)
+decaudio: declen=6040 out=6040 (max 190108)
+ telecine = 1.0  -2.500     
+A:   1.9 V:   1.9 A-V:  0.009 ct: -0.005  50/ 50  2%  0%  1.0% 0 0 47%         
+decaudio: minlen=5960 maxlen=190212 declen=5960 (max=70144)
+decaudio: decoding 5188 bytes, max: 69372 (4608)
+decaudio: decoding 580 bytes, max: 64764 (4608)
+decaudio: declen=5960 out=5960 (max 190212)
+ telecine = 1.0  -2.500     
+A:   2.0 V:   2.0 A-V:  0.013 ct: -0.004  51/ 51  2%  0%  1.0% 0 0 44%         
+decaudio: minlen=6000 maxlen=190396 declen=6000 (max=70144)
+decaudio: decoding 1972 bytes, max: 66116 (4608)
+decaudio: declen=6000 out=6000 (max 190396)
+ telecine = 1.0  -2.500     
+A:   2.0 V:   2.0 A-V:  0.011 ct: -0.004  52/ 52  2%  0%  0.9% 0 0 44%         
+decaudio: minlen=6044 maxlen=190540 declen=6044 (max=70144)
+decaudio: decoding 3408 bytes, max: 67508 (4608)
+decaudio: declen=6044 out=6044 (max 190540)
+ telecine = 1.0  -2.500     
+A:   2.0 V:   2.0 A-V: -0.009 ct: -0.005  53/ 53  2%  0%  0.9% 0 0 47%         
+decaudio: minlen=5956 maxlen=190640 declen=5956 (max=70144)
+decaudio: decoding 4756 bytes, max: 68944 (4608)
+decaudio: decoding 148 bytes, max: 64336 (4608)
+decaudio: declen=5956 out=5956 (max 190640)
+ telecine = 1.0  -2.500     
+A:   2.1 V:   2.1 A-V:  0.010 ct: -0.005  54/ 54  2%  0%  0.9% 0 0 46%         
+decaudio: minlen=9040 maxlen=190828 declen=9040 (max=70144)
+decaudio: decoding 4580 bytes, max: 65684 (4608)
+decaudio: declen=9040 out=9040 (max 190828)
+ telecine = 1.0  -2.500     
+A:   2.1 V:   2.1 A-V:  0.014 ct: -0.005  55/ 55  2%  0%  0.9% 0 0 47%         
+decaudio: minlen=5956 maxlen=189980 declen=5956 (max=70144)
+decaudio: decoding 5928 bytes, max: 70116 (4608)
+decaudio: decoding 1320 bytes, max: 65508 (4608)
+decaudio: declen=5956 out=5956 (max 189980)
+ telecine = 1.0  -2.500     
+A:   2.2 V:   2.1 A-V:  0.018 ct: -0.005  56/ 56  2%  0%  0.9% 0 0 45%         
+decaudio: minlen=6004 maxlen=190168 declen=6004 (max=70144)
+decaudio: decoding 2716 bytes, max: 66856 (4608)
+decaudio: declen=6004 out=6004 (max 190168)
+ telecine = 1.0  -2.500     
+A:   2.2 V:   2.2 A-V:  0.016 ct: -0.004  57/ 57  2%  0%  0.9% 0 0 45%         
+decaudio: minlen=6004 maxlen=190308 declen=6004 (max=70144)
+decaudio: decoding 4112 bytes, max: 68252 (4608)
+decaudio: declen=6004 out=6004 (max 190308)
+ telecine = 1.0  -2.500     
+A:   2.2 V:   2.2 A-V: -0.004 ct: -0.005  58/ 58  2%  0%  0.8% 0 0 48%         
+decaudio: minlen=6048 maxlen=190448 declen=6048 (max=70144)
+decaudio: decoding 5552 bytes, max: 69648 (4608)
+decaudio: decoding 944 bytes, max: 65040 (4608)
+decaudio: declen=6048 out=6048 (max 190448)
+ telecine = 1.0  -2.500     
+A:   2.2 V:   2.2 A-V: -0.000 ct: -0.006  59/ 59  2%  0%  0.8% 0 0 47%         
+decaudio: minlen=5996 maxlen=190544 declen=5996 (max=70144)
+decaudio: decoding 2332 bytes, max: 66480 (4608)
+decaudio: declen=5996 out=5996 (max 190544)
+ telecine = 1.0  -2.500     
+A:   2.3 V:   2.3 A-V:  0.004 ct: -0.005  60/ 60  2%  0%  0.8% 0 0 45%         
+decaudio: minlen=5960 maxlen=190692 declen=5960 (max=70144)
+decaudio: decoding 3684 bytes, max: 67868 (4608)
+decaudio: declen=5960 out=5960 (max 190692)
+ telecine = 1.0  -2.500     
+A:   2.3 V:   2.3 A-V:  0.001 ct: -0.005  61/ 61  2%  0%  0.8% 0 0 45%         
+decaudio: minlen=5992 maxlen=190876 declen=5992 (max=70144)
+decaudio: decoding 5068 bytes, max: 69220 (4608)
+decaudio: decoding 460 bytes, max: 64612 (4608)
+decaudio: declen=5992 out=5992 (max 190876)
+ telecine = 1.0  -2.500     
+A:   2.4 V:   2.3 A-V:  0.021 ct: -0.005  62/ 62  2%  0%  0.8% 0 0 47%         
+decaudio: minlen=9076 maxlen=191028 declen=9076 (max=70144)
+decaudio: decoding 4928 bytes, max: 65996 (4608)
+decaudio: decoding 320 bytes, max: 61388 (4608)
+decaudio: declen=9076 out=9076 (max 191028)
+ telecine = 1.0  -2.500     
+A:   2.4 V:   2.4 A-V:  0.007 ct: -0.005  63/ 63  2%  0%  0.8% 0 0 45%         
+decaudio: minlen=5964 maxlen=190144 declen=5964 (max=70144)
+decaudio: decoding 1676 bytes, max: 65856 (4608)
+decaudio: declen=5964 out=5964 (max 190144)
+ telecine = 1.0  -2.500     
+A:   2.4 V:   2.4 A-V:  0.005 ct: -0.006  64/ 64  2%  0%  0.8% 0 0 45%         
+decaudio: minlen=5996 maxlen=190324 declen=5996 (max=70144)
+decaudio: decoding 3064 bytes, max: 67212 (4608)
+decaudio: declen=5996 out=5996 (max 190324)
+ telecine = 1.0  -2.500     
+A:   2.4 V:   2.4 A-V:  0.009 ct: -0.005  65/ 65  2%  0%  0.7% 0 0 47%         
+decaudio: minlen=6000 maxlen=190472 declen=6000 (max=70144)
+decaudio: decoding 4456 bytes, max: 68600 (4608)
+decaudio: declen=6000 out=6000 (max 190472)
+ telecine = 1.0  -2.500     
+A:   2.5 V:   2.5 A-V:  0.006 ct: -0.005  66/ 66  2%  0%  0.7% 0 0 47%         
+decaudio: minlen=5964 maxlen=190616 declen=5964 (max=70144)
+decaudio: decoding 5812 bytes, max: 69992 (4608)
+decaudio: decoding 1204 bytes, max: 65384 (4608)
+decaudio: declen=5964 out=5964 (max 190616)
+ telecine = 1.0  -2.500     
+A:   2.5 V:   2.5 A-V:  0.011 ct: -0.005  67/ 67  2%  0%  0.7% 0 0 46%         
+decaudio: minlen=6064 maxlen=190796 declen=6064 (max=70144)
+decaudio: decoding 2660 bytes, max: 66740 (4608)
+decaudio: declen=6064 out=6064 (max 190796)
+ telecine = 1.0  -2.500     
+A:   2.5 V:   2.5 A-V: -0.010 ct: -0.006  68/ 68  2%  0%  0.7% 0 0 47%         
+decaudio: minlen=5936 maxlen=190876 declen=5936 (max=70144)
+decaudio: decoding 3988 bytes, max: 68196 (4608)
+decaudio: declen=5936 out=5936 (max 190876)
+ telecine = 1.0  -2.500     
+A:   2.6 V:   2.6 A-V:  0.010 ct: -0.006  69/ 69  2%  0%  0.7% 0 0 45%         
+decaudio: minlen=9040 maxlen=191084 declen=9040 (max=70144)
+decaudio: decoding 8420 bytes, max: 69524 (4608)
+decaudio: decoding 3812 bytes, max: 64916 (4608)
+decaudio: declen=9040 out=9040 (max 191084)
+ telecine = 1.0  -2.500     
+A:   2.6 V:   2.6 A-V:  0.014 ct: -0.006  70/ 70  1%  0%  0.7% 0 0 47%         
+decaudio: minlen=5960 maxlen=190236 declen=5960 (max=70144)
+decaudio: decoding 5164 bytes, max: 69348 (4608)
+decaudio: decoding 556 bytes, max: 64740 (4608)
+decaudio: declen=5960 out=5960 (max 190236)
+ telecine = 1.0  -2.500     
+A:   2.7 V:   2.6 A-V:  0.018 ct: -0.005  71/ 71  1%  0%  0.7% 0 0 45%         
+decaudio: minlen=6020 maxlen=190420 declen=6020 (max=70144)
+decaudio: decoding 1968 bytes, max: 66092 (4608)
+decaudio: declen=6020 out=6020 (max 190420)
+ telecine = 1.0  -2.500     
+A:   2.7 V:   2.7 A-V:  0.015 ct: -0.004  72/ 72  1%  0%  0.7% 0 0 45%         
+decaudio: minlen=5980 maxlen=190544 declen=5980 (max=70144)
+decaudio: decoding 3340 bytes, max: 67504 (4608)
+decaudio: declen=5980 out=5980 (max 190544)
+ telecine = 1.0  -2.500     
+A:   2.7 V:   2.7 A-V: -0.005 ct: -0.006  73/ 73  1%  0%  0.7% 0 0 48%         
+decaudio: minlen=6000 maxlen=190708 declen=6000 (max=70144)
+decaudio: decoding 4732 bytes, max: 68876 (4608)
+decaudio: decoding 124 bytes, max: 64268 (4608)
+decaudio: declen=6000 out=6000 (max 190708)
+ telecine = 1.0  -2.500     
+A:   2.7 V:   2.7 A-V: -0.001 ct: -0.006  74/ 74  1%  0%  0.7% 0 0 46%         
+*** uninit(0xECB)
+Uninit audio filters...
+[libaf] Removing filter dummy 
+Uninit audio: mp3lib
+Uninit video: libmpeg2
+DEMUXER: freeing demuxer at 003DBCE8
+DEMUXER: freeing sh_audio at 0134B2E0
+DEMUXER: freeing sh_video at 0134B100
+WINSOCK2 uninit
+<vo_directx><INFO>clipper released
+<vo_directx><INFO>back surface released
+<vo_directx><INFO>overlay surface released
+<vo_directx><INFO>primary released
+<vo_directx><INFO>window destroyed
+<vo_directx><INFO>GDI resources deleted
+<vo_directx><INFO>directdrawobject released
+<vo_directx><INFO>ddraw.dll freed
+<vo_directx><INFO>uninited
+
+[[[uninit getch2]]]
+ao_dsound: DirectSound uninitialized
+
+Exiting... (Quit)
+max framesize was 81368 bytes

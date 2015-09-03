@@ -1,0 +1,54 @@
+8
+
+dir
+8627
+svn://svn.mplayerhq.hu/ffmpeg/trunk/libavcodec/sparc
+svn://svn.mplayerhq.hu/ffmpeg
+
+
+
+2006-10-11T07:47:59.076282Z
+6641
+diego
+
+
+svn:special svn:externals svn:needs-lock
+
+
+
+
+
+
+
+
+
+
+
+9553f0bf-9b14-0410-a0b8-cfaf0461ba5b
+
+dsputil_vis.c
+file
+
+
+
+
+2007-04-03T19:33:52.207875Z
+fdcf0ed8b9b8fb9cc7d2b1d995b9d264
+2006-10-11T07:47:59.076282Z
+6641
+diego
+has-props
+
+vis.h
+file
+
+
+
+
+2007-04-03T19:33:52.207875Z
+aa5068562519f503f37f01201f9ecbc1
+2006-10-11T07:47:59.076282Z
+6641
+diego
+has-props
+

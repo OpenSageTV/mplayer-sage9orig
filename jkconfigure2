@@ -1,0 +1,1 @@
+./configure --disable-vidix-internal --disable-vidix-external --disable-mencoder --disable-gl --enable-runtime-cpudetection --enable-static --enable-largefiles --disable-langinfo --disable-tv --disable-dvdread --disable-dvdread-internal --disable-freetype --disable-fontconfig --disable-unrarlib --disable-menu --disable-libdvdcss-internal

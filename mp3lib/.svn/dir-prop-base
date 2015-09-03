@@ -1,0 +1,9 @@
+K 10
+svn:ignore
+V 28
+.depend
+test
+test2
+libmp3.a
+
+END

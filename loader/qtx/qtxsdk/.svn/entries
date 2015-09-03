@@ -1,0 +1,54 @@
+8
+
+dir
+22915
+svn://svn.mplayerhq.hu/mplayer/trunk/loader/qtx/qtxsdk
+svn://svn.mplayerhq.hu/mplayer
+
+
+
+2005-08-10T22:48:32.000000Z
+16195
+ivo
+
+
+svn:special svn:externals svn:needs-lock
+
+
+
+
+
+
+
+
+
+
+
+b3059339-0415-0410-9bf9-f77b7e298cf2
+
+select.h
+file
+
+
+
+
+2006-06-09T22:19:57.984375Z
+53110c410a692beef2df820d1c557056
+2005-08-10T22:48:32.000000Z
+16195
+ivo
+has-props
+
+components.h
+file
+
+
+
+
+2006-06-09T22:19:57.984375Z
+b16749f6950bae24b790b29d575c3ecc
+2004-10-30T12:17:16.000000Z
+13810
+faust3
+has-props
+

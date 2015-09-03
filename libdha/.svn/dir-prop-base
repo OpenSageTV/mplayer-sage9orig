@@ -1,0 +1,13 @@
+K 10
+svn:ignore
+V 84
+.depend
+libdha.a
+pci_vendors.h
+pci_ids.h
+pci_names.c
+pci_names.h
+pci_dev_ids.c
+test
+
+END

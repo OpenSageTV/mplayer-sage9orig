@@ -1,0 +1,9 @@
+K 10
+svn:ignore
+V 44
+.depend
+libswscale*
+cs_test
+swscale-example
+
+END
